@@ -275,13 +275,17 @@
 
 <div class="container" id="appContainer" style="display:none;">
     <header>
-        <h1><span class="logo">GRUPO LABMEDIC </span> Gestão de Folha de Pagamento</h1>
+        <h1><span class="logo">FP</span> Gestão de Folha de Pagamento</h1>
         <div class="toolbar">
             <button class="btn-primary" onclick="openModal()">+ Novo Colaborador</button>
             <button class="btn-outline" onclick="adicionarNovaEmpresa()" title="Cadastrar nova empresa/unidade">🏢 + Nova Empresa</button>
             <label class="btn-outline btn-file">
                 📥 Importar Excel
                 <input type="file" id="importFile" accept=".xlsx,.xls" onchange="handleImportFile(event)">
+            </label>
+            <label class="btn-outline btn-file" title="Reimportar uma planilha gerada por este sistema (Exportar Excel), restaurando todos os colaboradores e a competência">
+                🔄 Importar Planilha do Sistema
+                <input type="file" id="importSystemFile" accept=".xlsx,.xls" onchange="handleImportSystemFile(event)">
             </label>
             <button class="btn-success" onclick="exportExcel()">📊 Exportar Excel</button>
             <button class="btn-danger" onclick="exportPDF()">📄 Exportar PDF</button>
@@ -625,6 +629,39 @@
         alert(`Categoria "${t}" adicionada e já disponível nos filtros e no cadastro.`);
     }
 
+    // Monta dinamicamente os grupos "Empresa - Vínculo" do Resumo Sintético (Excel e PDF),
+    // a partir das empresas e categorias REALMENTE presentes nos dados — incluindo qualquer
+    // empresa cadastrada pelo usuário (ex.: "QST - HOLDING") ou categoria extra (ex.: "PRO-LABORE"),
+    // desde que existam colaboradores vinculados a elas. Empresas/categorias sem nenhum registro não aparecem.
+    function buildGruposResumo(data) {
+        const ordemUnidades = todasEmpresas();
+        const unidadesPresentes = [...new Set(data.map(e => e.unidade))];
+        unidadesPresentes.sort((a, b) => {
+            const ia = ordemUnidades.indexOf(a), ib = ordemUnidades.indexOf(b);
+            if (ia !== -1 && ib !== -1) return ia - ib;
+            if (ia !== -1) return -1;
+            if (ib !== -1) return 1;
+            return a.localeCompare(b, 'pt-BR');
+        });
+
+        const ordemTipos = todasCategorias();
+        const grupos = [];
+        unidadesPresentes.forEach(unidade => {
+            const tiposPresentes = [...new Set(data.filter(e => e.unidade === unidade).map(e => e.tipo))];
+            tiposPresentes.sort((a, b) => {
+                const ia = ordemTipos.indexOf(a), ib = ordemTipos.indexOf(b);
+                if (ia !== -1 && ib !== -1) return ia - ib;
+                if (ia !== -1) return -1;
+                if (ib !== -1) return 1;
+                return a.localeCompare(b, 'pt-BR');
+            });
+            tiposPresentes.forEach(tipo => {
+                grupos.push({ nome: `${unidade} - ${tipo}`, filter: e => e.unidade === unidade && e.tipo === tipo });
+            });
+        });
+        return grupos;
+    }
+
     // --- TEMA CLARO/ESCURO ---
     function aplicarTema(tema) {
         document.documentElement.setAttribute('data-theme', tema === 'dark' ? 'dark' : 'light');
@@ -878,7 +915,7 @@
         document.getElementById('editIndex').value = index;
         document.getElementById('modalTitle').innerText = index === -1 ? 'Novo Colaborador' : 'Editar Colaborador';
         
-        const currencyFields = ['salario','servicos','plantoes','ajudaCarro','telefone','vendaFerias','adicFerias','ad13','salExtra','inss','irrf','multa','desconto','pensao','adiantamento','descRef','outros','adiantFerias','inssFerias','inssDifFerias','irrfFerias','adiantAbono','inss13','irrf13','consignado','assistMed','planoSaude','planoOdonto','vr','vt'];
+        const currencyFields = CURRENCY_FIELDS;
         
         clearExtraFields();
 
@@ -925,7 +962,7 @@
         emp.unidade = document.getElementById('unidade').value;
         emp.tipo = document.getElementById('tipo').value;
         
-        const currencyFields = ['salario','servicos','plantoes','ajudaCarro','telefone','vendaFerias','adicFerias','ad13','salExtra','inss','irrf','multa','desconto','pensao','adiantamento','descRef','outros','adiantFerias','inssFerias','inssDifFerias','irrfFerias','adiantAbono','inss13','irrf13','consignado','assistMed','planoSaude','planoOdonto','vr','vt'];
+        const currencyFields = CURRENCY_FIELDS;
         currencyFields.forEach(f => emp[f] = parseCurrency(document.getElementById(f).value));
 
         // Campos extras (novos proventos/descontos criados dinamicamente pelo usuário)
@@ -946,6 +983,7 @@
     }
 
     // --- RÓTULOS PROFISSIONAIS DOS CAMPOS (usados no modal de detalhes e no PDF individual) ---
+    const CURRENCY_FIELDS = ['salario','servicos','plantoes','ajudaCarro','telefone','vendaFerias','adicFerias','ad13','salExtra','inss','irrf','multa','desconto','pensao','adiantamento','descRef','outros','adiantFerias','inssFerias','inssDifFerias','irrfFerias','adiantAbono','inss13','irrf13','consignado','assistMed','planoSaude','planoOdonto','vr','vt'];
     const LABELS_PROVENTOS = [
         ['salario', 'Salário Base'], ['servicos', 'Principal - Serviços (MEI)'], ['plantoes', 'Plantões / Horas Extras'],
         ['ajudaCarro', 'Ajuda de Custo (Carro)'], ['telefone', 'Ajuda de Telefone'], ['vendaFerias', 'Venda de Férias'],
@@ -1173,15 +1211,7 @@
             cell.alignment = { horizontal: 'center' };
         });
 
-        const grupos = [
-            { nome: 'Labmedic - CLT', filter: e => e.unidade === 'Labmedic' && e.tipo === 'CLT' },
-            { nome: 'Labmedic - MEI/PJ', filter: e => e.unidade === 'Labmedic' && e.tipo === 'MEI/PJ' },
-            { nome: 'Labmedic - CLT + MEI/PJ', filter: e => e.unidade === 'Labmedic' && e.tipo === 'CLT + MEI/PJ' },
-            { nome: 'Diag Rio - CLT', filter: e => e.unidade === 'Diag Rio' && e.tipo === 'CLT' },
-            { nome: 'Diag Rio - MEI/PJ', filter: e => e.unidade === 'Diag Rio' && e.tipo === 'MEI/PJ' },
-            { nome: 'Diag Rio - CLT + MEI/PJ', filter: e => e.unidade === 'Diag Rio' && e.tipo === 'CLT + MEI/PJ' }
-        ];
-
+        const grupos = buildGruposResumo(filteredData);
         let gTotais = { qtd: 0, prov: 0, desc: 0, liq: 0 };
         grupos.forEach(g => {
             const filtered = filteredData.filter(g.filter);
@@ -1238,6 +1268,24 @@
             ws3.columns = [ {width: 25}, {width: 15}, {width: 14}, {width: 32}, {width: 16} ];
         }
 
+        // --- Aba 4 (oculta): dados completos, campo a campo, para reimportação exata pelo próprio sistema ---
+        // Esta aba é a fonte de verdade usada pelo botão "Importar Planilha do Sistema".
+        const ws4 = workbook.addWorksheet('Dados Completos (Sistema)');
+        ws4.getCell('A1').value = `Competência: ${currentPeriodLabel || ''}`;
+        ws4.getCell('A1').font = { italic: true, color: { argb: 'FF64748B' } };
+        const header4 = ['nome', 'unidade', 'tipo', ...CURRENCY_FIELDS, 'extraProventosJSON', 'extraDescontosJSON'];
+        ws4.addRow(header4);
+        filteredData.forEach(emp => {
+            const row = [
+                emp.nome, emp.unidade, emp.tipo,
+                ...CURRENCY_FIELDS.map(f => emp[f] || 0),
+                JSON.stringify(emp.extraProventos || []),
+                JSON.stringify(emp.extraDescontos || [])
+            ];
+            ws4.addRow(row);
+        });
+        ws4.state = 'hidden'; // não atrapalha a visualização humana, mas garante reimportação 100% fiel
+
         const buffer = await workbook.xlsx.writeBuffer();
         const periodoArq = currentPeriodLabel ? currentPeriodLabel.replace(/\s+/g, '_') : 'Completa';
         saveAs(new Blob([buffer]), `Folha_Pagamento_${periodoArq}_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -1274,14 +1322,7 @@
         doc.setFontSize(10); doc.setTextColor(100);
         doc.text(`Filtros aplicados: ${getFiltroDescricao()}`, 14, 22);
 
-        const grupos = [
-            { nome: 'Labmedic - CLT', filter: e => e.unidade === 'Labmedic' && e.tipo === 'CLT' },
-            { nome: 'Labmedic - MEI/PJ', filter: e => e.unidade === 'Labmedic' && e.tipo === 'MEI/PJ' },
-            { nome: 'Labmedic - CLT + MEI/PJ', filter: e => e.unidade === 'Labmedic' && e.tipo === 'CLT + MEI/PJ' },
-            { nome: 'Diag Rio - CLT', filter: e => e.unidade === 'Diag Rio' && e.tipo === 'CLT' },
-            { nome: 'Diag Rio - MEI/PJ', filter: e => e.unidade === 'Diag Rio' && e.tipo === 'MEI/PJ' },
-            { nome: 'Diag Rio - CLT + MEI/PJ', filter: e => e.unidade === 'Diag Rio' && e.tipo === 'CLT + MEI/PJ' }
-        ];
+        const grupos = buildGruposResumo(filteredData);
 
         const resumoData = grupos.map(g => {
             const f = filteredData.filter(g.filter);
@@ -1441,6 +1482,182 @@
             emp.tipo = Array.from(tipos).sort().join(' + '); // 'CLT', 'MEI/PJ' ou 'CLT + MEI/PJ'
             return emp;
         });
+    }
+
+    // ==================================================================================
+    // --- IMPORTAÇÃO DE PLANILHA GERADA PELO PRÓPRIO SISTEMA (botão "Importar Planilha do Sistema") ---
+    // ==================================================================================
+    // Reconhece o arquivo produzido pelo "Exportar Excel" deste sistema e restaura os
+    // colaboradores e a competência a que a planilha se refere.
+
+    let pendingSystemImportEmployees = null;
+
+    function handleImportSystemFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const bytes = new Uint8Array(e.target.result);
+                if (!isZipSignature(bytes)) {
+                    alert('Arquivo não reconhecido como planilha .xlsx válida.');
+                    return;
+                }
+                const wb = XLSX.read(bytes, { type: 'array' });
+                processSystemWorkbook(wb, file.name);
+            } catch (err) {
+                alert('Erro ao ler o arquivo: ' + err.message);
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        event.target.value = '';
+    }
+
+    // Tenta primeiro o caminho de alta fidelidade (aba oculta "Dados Completos (Sistema)");
+    // se o arquivo for de uma exportação anterior sem essa aba, cai para a reconstrução a
+    // partir dos totais da aba "Folha Analítica".
+    function processSystemWorkbook(wb, fileName) {
+        const fullSheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'dados completos (sistema)');
+        if (fullSheetName) {
+            const parsed = parseFullFidelitySheet(wb.Sheets[fullSheetName]);
+            if (parsed.employees.length) {
+                openSystemImportConfirm(parsed.employees, parsed.periodo, true);
+                return;
+            }
+        }
+
+        const analyticSheetName = wb.SheetNames.find(n => n.trim().toLowerCase() === 'folha analítica') || wb.SheetNames[0];
+        const ws = analyticSheetName ? wb.Sheets[analyticSheetName] : null;
+        if (!ws) {
+            alert('Não foi possível localizar dados reconhecíveis nesta planilha.');
+            return;
+        }
+        const result = parseAnalyticSheetTotals(ws);
+        if (!result.employees.length) {
+            alert('Nenhum colaborador reconhecido. Verifique se este arquivo foi gerado pela opção "Exportar Excel" deste sistema.');
+            return;
+        }
+        const periodo = result.periodo || guessPeriodFromFilename(fileName);
+        openSystemImportConfirm(result.employees, periodo, false);
+    }
+
+    // Extrai um possível nome de competência a partir do nome do arquivo exportado,
+    // ex.: "Folha_Pagamento_Agosto_2026_2026-08-21.xlsx" -> "Agosto 2026"
+    function guessPeriodFromFilename(fileName) {
+        const m = fileName.match(/^Folha_Pagamento_(.+)_\d{4}-\d{2}-\d{2}\.xlsx?$/i);
+        if (!m) return '';
+        const raw = m[1];
+        if (/^completa$/i.test(raw) || /^geral$/i.test(raw)) return '';
+        return raw.replace(/_/g, ' ').trim();
+    }
+
+    function safeParseJsonArray(val) {
+        if (!val) return [];
+        try {
+            const parsed = JSON.parse(String(val));
+            return Array.isArray(parsed) ? parsed.filter(it => it && typeof it === 'object' && 'label' in it) : [];
+        } catch { return []; }
+    }
+
+    // Caminho de alta fidelidade: lê campo a campo (inclusive proventos/descontos extras) da aba oculta.
+    function parseFullFidelitySheet(ws) {
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+        let periodo = '';
+        if (aoa[0] && aoa[0][0]) {
+            const m = String(aoa[0][0]).match(/Compet[êe]ncia:\s*(.*)/i);
+            if (m) periodo = m[1].trim();
+        }
+        const headerRowIdx = aoa.findIndex(r => r && String(r[0] || '').trim().toLowerCase() === 'nome');
+        if (headerRowIdx === -1) return { employees: [], periodo };
+        const headers = aoa[headerRowIdx].map(h => String(h || '').trim());
+        const employees = [];
+        for (let r = headerRowIdx + 1; r < aoa.length; r++) {
+            const row = aoa[r];
+            if (!row || !row[0]) continue;
+            const emp = {};
+            headers.forEach((h, i) => {
+                const val = row[i];
+                if (h === 'nome' || h === 'unidade' || h === 'tipo') {
+                    emp[h] = val != null ? String(val).trim() : '';
+                } else if (h === 'extraProventosJSON') {
+                    emp.extraProventos = safeParseJsonArray(val);
+                } else if (h === 'extraDescontosJSON') {
+                    emp.extraDescontos = safeParseJsonArray(val);
+                } else if (CURRENCY_FIELDS.includes(h)) {
+                    emp[h] = typeof val === 'number' ? val : parseNumericCell(val);
+                }
+            });
+            if (emp.nome) employees.push(emp);
+        }
+        return { employees, periodo };
+    }
+
+    // Caminho de compatibilidade: reconstrói colaboradores a partir da aba "Folha Analítica"
+    // (apenas totais — não existe detalhamento por campo em exportações antigas sem a aba de dados completos).
+    function parseAnalyticSheetTotals(ws) {
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+        let periodo = '';
+        if (aoa[0] && aoa[0][0]) {
+            const title = String(aoa[0][0]);
+            const idx = title.lastIndexOf(' - ');
+            if (idx !== -1) {
+                const suffix = title.slice(idx + 3).trim();
+                if (suffix && !/LABMEDIC/i.test(suffix)) periodo = suffix;
+            }
+        }
+        const headerRowIdx = aoa.findIndex(r => r && String(r[0] || '').trim().toLowerCase() === 'nome');
+        if (headerRowIdx === -1) return { employees: [], periodo };
+        const employees = [];
+        for (let r = headerRowIdx + 1; r < aoa.length; r++) {
+            const row = aoa[r];
+            if (!row || !row[0]) continue;
+            const nome = String(row[0]).trim();
+            if (!nome || /^TOTA(L|IS)/i.test(nome)) continue;
+            const emp = { nome, unidade: String(row[1] || '').trim(), tipo: String(row[2] || '').trim() };
+            CURRENCY_FIELDS.forEach(f => emp[f] = 0);
+            emp.salario = parseNumericCell(row[3]);   // consolida todo o provento no campo "Salário Base"
+            emp.desconto = parseNumericCell(row[4]);  // consolida todo o desconto no campo "Desconto Diverso"
+            emp.vr = parseNumericCell(row[6]);         // VR/VT estava combinado numa única coluna neste formato
+            emp.extraProventos = [];
+            emp.extraDescontos = [];
+            employees.push(emp);
+        }
+        return { employees, periodo };
+    }
+
+    // Passo de confirmação (reaproveita o modal do assistente de importação) — mostra quantos
+    // colaboradores foram encontrados e permite conferir/ajustar a competência antes de aplicar.
+    function openSystemImportConfirm(employees, periodoDetectado, fullFidelity) {
+        pendingSystemImportEmployees = employees;
+        document.getElementById('importWizardTitle').innerText = 'Importar Planilha do Sistema';
+        document.getElementById('importWizardBody').innerHTML = `
+            <p style="margin-bottom:15px;color:var(--muted);">
+                ${fullFidelity
+                    ? `Planilha com dados completos do sistema reconhecida. <strong>${employees.length}</strong> colaborador(es) encontrados, com todos os proventos, descontos e campos extras preservados.`
+                    : `Planilha de totais reconhecida (formato de uma exportação anterior, sem o detalhamento campo a campo). <strong>${employees.length}</strong> colaborador(es) encontrados — os valores serão importados como Provento e Desconto totais consolidados por colaborador.`}
+            </p>
+            <div class="form-group" style="margin-bottom:5px;">
+                <label>Competência ${periodoDetectado ? '(detectada automaticamente — confira e ajuste se necessário)' : '(não foi possível detectar automaticamente — informe manualmente)'}</label>
+                <input type="text" id="systemImportPeriodo" placeholder="Ex: Agosto/2026" value="${escapeHtml(periodoDetectado)}">
+            </div>
+            <p style="margin:10px 0 15px;color:var(--muted);font-size:0.85rem;">Isso substituirá os dados atualmente carregados na tabela.</p>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeImportWizard()">Cancelar</button>
+                <button class="btn-primary" onclick="confirmSystemImport()">Importar ${employees.length} colaborador(es)</button>
+            </div>`;
+        document.getElementById('importWizardOverlay').classList.add('active');
+    }
+
+    function confirmSystemImport() {
+        if (!pendingSystemImportEmployees || !pendingSystemImportEmployees.length) return;
+        const periodo = document.getElementById('systemImportPeriodo').value.trim();
+        payrollData = pendingSystemImportEmployees;
+        currentPeriodLabel = periodo || null;
+        sortPayrollData();
+        closeImportWizard();
+        applyFilters();
+        alert(`Importação concluída com sucesso!${currentPeriodLabel ? ' Competência: ' + currentPeriodLabel : ''}`);
     }
 
     // --- Detecção de assinatura de arquivo (ZIP normal x CFB/OLE criptografado) ---
@@ -1658,6 +1875,7 @@
         document.getElementById('importWizardOverlay').classList.remove('active');
         pendingCFBRaw = null;
         currentWorkbook = null;
+        pendingSystemImportEmployees = null;
     }
 
     // Inicializar
