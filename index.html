@@ -95,6 +95,29 @@
         }
         .filter-item select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
 
+        /* Caixa de Busca Inteligente (ao lado do filtro Categoria de Vínculo) */
+        .smart-search-wrap { position: relative; display: flex; align-items: center; }
+        .smart-search-wrap .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; pointer-events: none; }
+        #filterBusca {
+            padding: 8px 34px 8px 34px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-width: 240px;
+            background: var(--card);
+            color: var(--text);
+        }
+        #filterBusca::placeholder { color: var(--placeholder); }
+        #filterBusca:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
+        .smart-search-wrap .clear-btn {
+            position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+            background: transparent; border: none; color: var(--muted); cursor: pointer;
+            font-size: 0.95rem; padding: 2px 6px; border-radius: 4px; line-height: 1; display: none;
+        }
+        .smart-search-wrap .clear-btn:hover { background: var(--bg); color: var(--text); }
+        .smart-search-wrap.has-value .clear-btn { display: inline-flex; }
+        .search-match-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+
         .card { background: var(--card); border-radius: 8px; box-shadow: 0 4px 6px -1px var(--shadow-color); padding: 20px; margin-bottom: 20px; overflow-x: auto;}
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -337,6 +360,15 @@
                     </select>
                     <button type="button" class="btn-outline" style="padding: 8px 12px;" onclick="adicionarNovaCategoria()" title="Adicionar nova categoria de vínculo">+</button>
                 </div>
+            </div>
+            <div class="filter-item">
+                <label>Busca Inteligente</label>
+                <div class="smart-search-wrap" id="smartSearchWrap">
+                    <span class="search-icon">🔎</span>
+                    <input type="text" id="filterBusca" autocomplete="off" placeholder="Buscar por nome, unidade ou categoria...">
+                    <button type="button" class="clear-btn" id="filterBuscaClear" onclick="limparBusca()" title="Limpar busca">✕</button>
+                </div>
+                <div class="search-match-hint" id="searchMatchHint"></div>
             </div>
         </div>
         <div id="customEmpresasInfo" style="margin-top:10px; font-size:0.8rem; color:var(--muted);"></div>
@@ -818,17 +850,79 @@
         return { prov, desc, liq: prov - desc };
     }
 
+    // --- BUSCA INTELIGENTE (normalização sem acentos e case-insensitive, multi-termo) ---
+    function normalizarTexto(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // remove diacríticos
+            .trim();
+    }
+
+    function debounce(fn, wait) {
+        let timer = null;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+
+    function limparBusca() {
+        const inp = document.getElementById('filterBusca');
+        inp.value = '';
+        document.getElementById('smartSearchWrap').classList.remove('has-value');
+        document.getElementById('searchMatchHint').textContent = '';
+        applyFilters();
+    }
+
+    function handleBuscaInput() {
+        const inp = document.getElementById('filterBusca');
+        const wrap = document.getElementById('smartSearchWrap');
+        if (inp.value.trim()) wrap.classList.add('has-value'); else wrap.classList.remove('has-value');
+        applyFiltersDebounced();
+    }
+
+    const applyFiltersDebounced = debounce(applyFilters, 120);
+
     // --- FILTROS ---
     function applyFilters() {
         const empresa = document.getElementById('filterEmpresa').value;
         const categoria = document.getElementById('filterCategoria').value;
-        
+        const buscaRaw = (document.getElementById('filterBusca')?.value || '').trim();
+        const termosBusca = normalizarTexto(buscaRaw).split(/\s+/).filter(t => t.length > 0);
+
+        const hintEl = document.getElementById('searchMatchHint');
+
         filteredData = payrollData.filter(emp => {
             const matchEmpresa = empresa === 'todas' || emp.unidade === empresa;
             const matchCategoria = categoria === 'todos' || emp.tipo === categoria;
-            return matchEmpresa && matchCategoria;
+            if (!termosBusca.length) return matchEmpresa && matchCategoria;
+
+            // Combina a busca inteligente com os demais filtros (não substitui).
+            // Para cada termo, o colaborador precisa ter ao menos UM campo contendo esse termo.
+            const campos = [
+                normalizarTexto(emp.nome),
+                normalizarTexto(emp.unidade),
+                normalizarTexto(emp.tipo)
+            ];
+            const matchBusca = termosBusca.every(termo =>
+                campos.some(campo => campo && campo.includes(termo))
+            );
+            return matchEmpresa && matchCategoria && matchBusca;
         });
-        
+
+        // Atualiza dica amigável da busca
+        if (hintEl) {
+            if (termosBusca.length === 0) {
+                hintEl.textContent = '';
+            } else if (filteredData.length === 0) {
+                hintEl.textContent = `Nenhum colaborador corresponde a "${buscaRaw}".`;
+            } else {
+                hintEl.textContent = `${filteredData.length} resultado(s) para "${buscaRaw}".`;
+            }
+        }
+
         renderTable();
         updateCards();
     }
@@ -1886,5 +1980,6 @@
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
 </html>
