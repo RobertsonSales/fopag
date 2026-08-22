@@ -801,7 +801,11 @@
 
     function removeExtraField(rowId) {
         const row = document.getElementById(rowId);
-        if (row) row.remove();
+        if (!row) return;
+        const labelInput = row.querySelector('.extra-field-label');
+        const identificador = labelInput?.value.trim() || rowId;
+        if (!confirm(`Confirma a remoção do campo "${identificador}"?`)) return;
+        row.remove();
         calcTotals();
         updateFieldCounts();
     }
@@ -1070,7 +1074,10 @@
     }
     
     function deleteEmp(index) {
-        if(confirm('Excluir este colaborador?')) {
+        const emp = payrollData[index];
+        if (!emp) return;
+        const identificador = emp.nome || `registro ${index + 1}`;
+        if (confirm(`Confirma a exclusão do registro de "${identificador}"?`)) {
             payrollData.splice(index, 1);
             applyFilters();
         }
