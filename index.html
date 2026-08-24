@@ -94,6 +94,8 @@
             font-size: 0.9rem; min-width: 200px; cursor: pointer; background: var(--card); color: var(--text);
         }
         .filter-item select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
+        .filter-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+        .filter-actions button { padding: 8px 14px; font-size: 0.85rem; }
 
         /* Caixa de Busca Inteligente (ao lado do filtro Categoria de Vínculo) */
         .smart-search-wrap { position: relative; display: flex; align-items: center; }
@@ -371,6 +373,11 @@
                 </div>
                 <div class="search-match-hint" id="searchMatchHint"></div>
             </div>
+        </div>
+        <div class="filter-actions">
+            <button type="button" class="btn-outline" onclick="limparTodosFiltros()" title="Limpar todos os filtros">
+                🧹 Limpar Filtros
+            </button>
         </div>
         <div id="customEmpresasInfo" style="margin-top:10px; font-size:0.8rem; color:var(--muted);"></div>
         <div id="customCategoriasInfo" style="margin-top:4px; font-size:0.8rem; color:var(--muted);"></div>
@@ -915,6 +922,12 @@
         document.getElementById('smartSearchWrap').classList.remove('has-value');
         document.getElementById('searchMatchHint').textContent = '';
         applyFilters();
+    }
+
+    function limparTodosFiltros() {
+        document.getElementById('filterEmpresa').value = 'todas';
+        document.getElementById('filterCategoria').value = 'todos';
+        limparBusca();
     }
 
     function handleBuscaInput() {
