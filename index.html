@@ -616,6 +616,22 @@
 
     const formatBRL = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+    // Formata valores para dentro de <input> editáveis (modal de edição / campos extras).
+    // NÃO usa Intl/toLocaleString: em alguns navegadores/WebViews com dados de locale
+    // reduzidos, toLocaleString('pt-BR', ...) cai para o padrão en-US ("R$1,234.56"),
+    // e como esse valor é relido pelo parseCurrency (que assume rigorosamente o padrão
+    // "R$ 1.234,56"), o total exibido no modal de edição saía completamente errado
+    // (ex.: R$ 338,78 virava R$ 33.878,00). formatBRLInput monta a string manualmente,
+    // sempre no mesmo formato que parseCurrency espera, então o round-trip nunca falha.
+    function formatBRLInput(val) {
+        const n = Number(val) || 0;
+        const neg = n < 0;
+        const fixed = Math.abs(n).toFixed(2);
+        const [intPart, decPart] = fixed.split('.');
+        const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return (neg ? '-' : '') + 'R$ ' + withThousands + ',' + decPart;
+    }
+
     // --- ORDENAÇÃO ALFABÉTICA (aplicada a toda a lista de colaboradores) ---
     function sortPayrollData() {
         payrollData.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
@@ -903,7 +919,7 @@
             </div>
             <div class="form-group">
                 <label>Valor</label>
-                <input type="text" class="currency-input extra-field-value" value="${formatBRL(valor || 0)}">
+                <input type="text" class="currency-input extra-field-value" value="${formatBRLInput(valor || 0)}">
             </div>
             <button type="button" class="btn-remove-field" title="Remover campo" onclick="removeExtraField('${rowId}')">✕</button>
         `;
@@ -1150,7 +1166,7 @@
             document.getElementById('tipo').value = emp.tipo;
             currencyFields.forEach(f => {
                 const val = emp[f] || 0;
-                document.getElementById(f).value = formatBRL(val);
+                document.getElementById(f).value = formatBRLInput(val);
             });
             (emp.extraProventos || []).forEach(item => addExtraField('proventos', item.label, item.valor));
             (emp.extraDescontos || []).forEach(item => addExtraField('descontos', item.label, item.valor));
