@@ -1403,11 +1403,55 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape', 'mm', 'a4');
 
+        // --- PÁGINA 1: Resumo dos montantes a pagar por empresa ---
+        doc.setFontSize(18); doc.setTextColor(15, 76, 129);
+        doc.text(`Resumo por Empresa${currentPeriodLabel ? ' - ' + currentPeriodLabel : ''}`, 14, 15);
+        doc.setFontSize(10); doc.setTextColor(100);
+        doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22);
+        doc.text(`Filtros aplicados: ${getFiltroDescricao()}`, 14, 27);
+
+        const empresasPresentes = [...new Set(filteredData.map(e => e.unidade))]
+            .sort((a, b) => {
+                const ordem = todasEmpresas();
+                const ia = ordem.indexOf(a), ib = ordem.indexOf(b);
+                if (ia !== -1 && ib !== -1) return ia - ib;
+                if (ia !== -1) return -1;
+                if (ib !== -1) return 1;
+                return a.localeCompare(b, 'pt-BR');
+            });
+
+        let ep = 0, ed = 0, el = 0;
+        const empresaData = empresasPresentes.map(un => {
+            const f = filteredData.filter(e => e.unidade === un);
+            let p = 0, d = 0, l = 0;
+            f.forEach(e => { const c = calcEmp(e); p += c.prov; d += c.desc; l += c.liq; });
+            ep += p; ed += d; el += l;
+            return [un, f.length, formatBRL(p), formatBRL(d), formatBRL(l)];
+        });
+        empresaData.push(['TOTAL GERAL', filteredData.length, formatBRL(ep), formatBRL(ed), formatBRL(el)]);
+
+        doc.autoTable({
+            head: [["Empresa", "Qtd Colab.", "Total Proventos", "Total Descontos", "Total a Pagar (Líquido)"]],
+            body: empresaData, startY: 32, theme: 'grid',
+            headStyles: { fillColor: [15, 76, 129], textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 10, cellPadding: 4 },
+            columnStyles: { 0: { cellWidth: 70 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: [220, 38, 38] }, 4: { halign: 'right', textColor: [5, 150, 105], fontStyle: 'bold' } },
+            didParseCell: (hook) => {
+                if (hook.section === 'body' && hook.row.index === empresaData.length - 1) {
+                    hook.cell.styles.fontStyle = 'bold';
+                    hook.cell.styles.fillColor = [240, 249, 255];
+                }
+            }
+        });
+
+        // --- PÁGINA 2: Folha analítica ---
+        doc.addPage();
         doc.setFontSize(18); doc.setTextColor(15, 76, 129);
         doc.text(`Folha Analítica de Pagamento${currentPeriodLabel ? ' - ' + currentPeriodLabel : ''}`, 14, 15);
         doc.setFontSize(10); doc.setTextColor(100);
         doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22);
         doc.text(`Filtros aplicados: ${getFiltroDescricao()}`, 14, 27);
+
 
         const headers = [["Nome", "Unidade", "Tipo", "Proventos", "Descontos", "Líquido"]];
         const data = filteredData.map(emp => {
