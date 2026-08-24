@@ -546,8 +546,24 @@
     const BASE_EMPRESAS = ['Labmedic', 'Diag Rio'];
     let customEmpresas = [];
 
+    // Empresas disponíveis = base fixa + cadastradas pelo usuário + QUALQUER empresa
+    // que já tenha colaboradores vinculados nos dados (ex.: "QST - HOLDING" vinda de
+    // importação de planilha ou de cadastro anterior). Assim o filtro nunca esconde
+    // uma empresa que existe na lista de colaboradores.
+    function empresasNosDados() {
+        try {
+            return [...new Set((payrollData || [])
+                .map(e => (e && e.unidade ? String(e.unidade).trim() : ''))
+                .filter(u => u.length > 0))];
+        } catch (e) { return []; }
+    }
+
     function todasEmpresas() {
-        return [...BASE_EMPRESAS, ...customEmpresas];
+        const lista = [...BASE_EMPRESAS, ...customEmpresas];
+        empresasNosDados().forEach(u => {
+            if (!lista.some(e => e.toLowerCase() === u.toLowerCase())) lista.push(u);
+        });
+        return lista;
     }
 
     function badgeParaUnidade(unidade) {
@@ -897,6 +913,8 @@
 
     // --- FILTROS ---
     function applyFilters() {
+        // Garante que o seletor de empresas reflita os dados atuais antes de filtrar.
+        renderEmpresaOptions();
         const empresa = document.getElementById('filterEmpresa').value;
         const categoria = document.getElementById('filterCategoria').value;
         const buscaRaw = (document.getElementById('filterBusca')?.value || '').trim();
