@@ -233,6 +233,118 @@
             .landing-actions { align-items: center; }
             .landing-content h1 { font-size: 2.2rem; }
         }
+
+        /* ============================================================
+           RESPONSIVIDADE MOBILE — camada suplementar e ADITIVA.
+           As regras acima já existentes ficam INTACTAS. Aqui só
+           acrescentamos ajustes finos para celular (densidade,
+           toque ≥44px, anti-zoom iOS, modal cheio, tabela com
+           scroll horizontal suave, etc.).
+           ============================================================ */
+
+        /* Tabela: scroll horizontal com inércia em dispositivos de toque */
+        .card { -webkit-overflow-scrolling: touch; }
+
+        /* ---- Tablet / celular (≤768px) ---- */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            h1 { font-size: 1.4rem; gap: 6px; }
+            .logo { font-size: 1rem; padding: 4px 8px; }
+
+            .summary-cards { gap: 12px; margin-bottom: 18px; }
+            .summary-card { padding: 18px; }
+            .summary-card .value { font-size: 1.5rem; }
+
+            /* Toolbar do cabeçalho: 2 botões por linha em celular */
+            .toolbar { width: 100%; gap: 8px; }
+            .toolbar button,
+            .toolbar .btn-file { flex: 1 1 calc(50% - 8px); justify-content: center; min-height: 44px; }
+
+            /* Filtros: ocupa toda a largura */
+            .filters { padding: 15px; }
+            .filter-item,
+            .filter-item > div { width: 100%; }
+            .filter-item select,
+            #filterBusca { min-width: 0; width: 100%; }
+
+            /* Modal: aproveita melhor a tela do celular */
+            .modal-overlay { padding: 12px 10px; }
+            .modal { padding: 18px; max-width: 100%; border-radius: 10px; }
+            .modal h2 { font-size: 1.15rem; }
+            .close-btn { top: 10px; right: 10px; font-size: 1.3rem; }
+
+            /* Formulários: anti-zoom iOS (font-size ≥16px) e alvo de toque ≥44px */
+            input, select { font-size: 16px; }
+            button, .btn-file { min-height: 44px; }
+            .form-section > summary { padding: 12px 14px; }
+
+            /* Resumo de totais dentro do modal: empilha em coluna */
+            .summary-box { flex-direction: column; gap: 14px; padding: 14px; }
+            .summary-item p { font-size: 1.2rem; }
+
+            /* Cards de detalhe: empilha proventos / descontos / benefícios */
+            #detailModalBody > div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+            #detailModalBody h3 { font-size: 0.95rem; }
+
+            /* Tabela principal: células mais densas */
+            th, td { padding: 10px 12px; }
+        }
+
+        /* ---- Smartphones pequenos (≤480px) ---- */
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            header { margin-bottom: 14px; padding-bottom: 12px; }
+            h1 { font-size: 1.2rem; }
+
+            .summary-card { padding: 14px; }
+            .summary-card .value { font-size: 1.3rem; }
+            .summary-card h3 { font-size: 0.78rem; margin-bottom: 6px; }
+
+            /* Toolbar: 1 botão por linha para dar toque confortável */
+            .toolbar button,
+            .toolbar .btn-file { flex: 1 1 100%; font-size: 0.85rem; padding: 10px 12px; }
+
+            .filters { padding: 12px; }
+            .filters h3 { font-size: 1rem; }
+
+            /* Tabela principal: mais compacta, mantém scroll horizontal no card */
+            table th, table td { padding: 8px 10px; font-size: 0.8rem; }
+            table tbody td .text-right { font-size: 0.85rem; }
+
+            /* Botões de ação da linha (Editar / ND / X): tamanho de toque confortável */
+            .card table tbody td .btn-outline,
+            .card table tbody td .btn-primary,
+            .card table tbody td .btn-danger { padding: 8px 12px !important; font-size: 0.78rem; min-height: 36px; }
+
+            /* Linha de totais filtrados: cabe bem em 3+3 colunas flexíveis */
+            .modal { padding: 14px; }
+            .modal-footer { flex-wrap: wrap; }
+            .modal-footer button { flex: 1 1 auto; min-height: 44px; }
+
+            /* Landing page */
+            .landing-theme-toggle { top: 10px; right: 10px; padding: 6px 10px; font-size: 0.78rem; }
+            .landing-hero { padding: 50px 14px 20px; gap: 20px; }
+            .landing-content h1 { font-size: 1.9rem; }
+            .landing-sub { font-size: 1rem; margin-bottom: 12px; }
+            .landing-desc { font-size: 0.9rem; }
+            .landing-cta { font-size: 0.95rem; padding: 12px 20px; width: 100%; }
+            .landing-cta-secondary { width: 100%; text-align: center; }
+            .landing-features { padding: 0 14px; gap: 12px; }
+            .landing-feature-card { padding: 14px; }
+
+            /* Modal de pré-visualização do PDF: aproveita tela cheia */
+            #pdfPreviewOverlay { padding: 0; }
+            #pdfPreviewOverlay .modal { max-width: 100%; width: 100vw; height: 100vh; border-radius: 0; padding: 14px; }
+
+            /* Modal de detalhes: mantém legível mas reduz padding */
+            #detailModalBody table { font-size: 0.82rem; }
+            #detailModalBody .summary-box .summary-item p { font-size: 1.05rem; }
+        }
+
+        /* ---- Telas muito largas (desktop amplo) ---- */
+        @media (min-width: 1600px) {
+            .container { max-width: 1500px; }
+        }
     </style>
 </head>
 <body>
@@ -1987,6 +2099,7 @@
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
