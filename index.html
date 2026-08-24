@@ -215,7 +215,6 @@
         .landing-cta-secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); padding: 10px 20px; font-size: 0.9rem; }
         .landing-cta-secondary:hover { background: rgba(255,255,255,0.1); }
         .landing-illustration { width: 340px; max-width: 100%; flex-shrink: 0; }
-
         /* Cards de destaque temáticos na landing */
         .landing-features { max-width: 1100px; margin: 10px auto 40px; padding: 0 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; width: 100%; }
         .landing-feature-card { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22); border-radius: 12px; padding: 20px; backdrop-filter: blur(6px); transition: transform 0.2s, background 0.2s; }
@@ -224,6 +223,27 @@
         .landing-feature-card h4 { font-size: 0.98rem; margin-bottom: 6px; color: white; }
         .landing-feature-card p { font-size: 0.83rem; line-height: 1.5; opacity: 0.85; }
         .landing-footer { text-align: center; padding: 18px; font-size: 0.8rem; opacity: 0.75; border-top: 1px solid rgba(255,255,255,0.15); }
+
+        /* --- Carrossel de imagens temáticas (Landing) --- */
+        .landing-carousel { position: relative; width: 500px; max-width: 100%; flex-shrink: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 50px -12px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.28); background: rgba(0,0,0,0.2); }
+        .lc-track { display: flex; transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1); }
+        .lc-slide { min-width: 100%; position: relative; }
+        .lc-slide img { width: 100%; height: 360px; object-fit: cover; display: block; }
+        .lc-caption { position: absolute; left: 0; right: 0; bottom: 0; padding: 46px 18px 16px; background: linear-gradient(to top, rgba(3, 18, 36, 0.92), rgba(3, 18, 36, 0)); color: #fff; }
+        .lc-caption strong { display: block; font-size: 0.98rem; margin-bottom: 3px; }
+        .lc-caption span { font-size: 0.8rem; opacity: 0.85; line-height: 1.4; display: block; }
+        .lc-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.45); background: rgba(10, 30, 55, 0.45); color: #fff; font-size: 1.15rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: background 0.2s, transform 0.2s; z-index: 3; padding: 0; }
+        .lc-btn:hover { background: rgba(255,255,255,0.32); transform: translateY(-50%) scale(1.06); }
+        .lc-btn.prev { left: 12px; }
+        .lc-btn.next { right: 12px; }
+        .lc-dots { position: absolute; bottom: 14px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 3; }
+        .lc-dot { width: 9px; height: 9px; border-radius: 50%; border: none; background: rgba(255,255,255,0.45); cursor: pointer; padding: 0; transition: background 0.2s, transform 0.2s; }
+        .lc-dot.active { background: #fff; transform: scale(1.25); }
+        .lc-progress { position: absolute; top: 0; left: 0; height: 3px; background: #fff; width: 0%; z-index: 3; transition: width linear; opacity: 0.85; }
+        @media (max-width: 768px) {
+            .landing-carousel { width: 100%; }
+            .lc-slide img { height: 250px; }
+        }
 
         @media (max-width: 768px) {
             .form-grid, .details-content { grid-template-columns: 1fr; }
@@ -249,30 +269,83 @@
             <p class="landing-sub">Labmedic & Diag Rio</p>
             <p class="landing-desc">Sistema interno de gestão de folha de pagamento do Grupo Labmedic. Importe a planilha oficial de salários, organize colaboradores CLT e MEI/PJ por unidade, e gere relatórios e notas profissionais em poucos cliques.</p>
             <div class="landing-actions">
-                <button class="btn-primary landing-cta" onclick="irParaImportacao()">📥 Importar Planilha e Começar</button>
-                <button class="btn-primary landing-cta" onclick="irParaImportacaoSistema()">🔄 Importar Planilha do Sistema</button>
+                <button class="btn-primary landing-cta" onclick="irParaImportacao()">📥 Importar Planilha Antiga</button>
+                <button class="btn-primary landing-cta" onclick="irParaImportacaoSistema()">🔄 Importar Planilha Nova</button>
                 <button class="landing-cta-secondary" onclick="entrarSemImportar()">Entrar sem importar →</button>
             </div>
         </div>
-        <div class="landing-illustration">
-            <svg viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="200" cy="210" r="185" fill="rgba(255,255,255,0.08)"/>
-                <rect x="70" y="55" width="220" height="300" rx="16" fill="#ffffff" opacity="0.97"/>
-                <path d="M70 71 a16 16 0 0 1 16 -16 h188 a16 16 0 0 1 16 16 v49 h-220 z" fill="#0f4c81"/>
-                <text x="90" y="94" font-family="Segoe UI, sans-serif" font-size="19" font-weight="700" fill="white">Folha de Pagamento</text>
-                <rect x="90" y="147" width="180" height="10" rx="5" fill="#e2e8f0"/>
-                <rect x="90" y="172" width="140" height="10" rx="5" fill="#e2e8f0"/>
-                <rect x="90" y="197" width="160" height="10" rx="5" fill="#e2e8f0"/>
-                <rect x="90" y="222" width="120" height="10" rx="5" fill="#e2e8f0"/>
-                <rect x="90" y="256" width="180" height="42" rx="8" fill="#d1fae5"/>
-                <text x="104" y="282" font-family="Segoe UI, sans-serif" font-size="15" font-weight="700" fill="#059669">R$ Líquido a Pagar</text>
-                <path d="M52 96 q -22 42 12 72 q 26 23 54 3" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.9"/>
-                <circle cx="52" cy="96" r="10" fill="white" opacity="0.9"/>
-                <circle cx="120" cy="166" r="15" fill="none" stroke="white" stroke-width="7" opacity="0.9"/>
-                <circle cx="292" cy="332" r="36" fill="#059669"/>
-                <path d="M276 332 L288 344 L310 316" stroke="white" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div class="landing-carousel" id="landingCarousel" aria-label="Carrossel de imagens — laboratório e gestão de folha">
+            <div class="lc-progress" id="lcProgress"></div>
+            <div class="lc-track" id="lcTrack">
+                <div class="lc-slide">
+                    <img src="https://sspark.genspark.ai/cfimages?u1=dpynaRlJ0a16%2BnVpxyef9kOxL0AQPeiPz8A7GsDxAZO6zCEvttivvsTw1DSP4cT8oJgzIESDWzfvSrjIabgGBJmP3IWUR%2FGDfgWkAGBhIwYWB3lwAte4dD6r6p%2Fw2pHMsXAMi5fM6eYfzU7y%2FlpWRXqj0gPHJXeiq%2FWcd27ADm3pyTF%2FvKzQ1eFy%2F9KfR8WKrMFWiw%3D%3D&u2=lxVRIABpYcPk2UlJ&width=2560" alt="Técnico de laboratório analisando amostra ao microscópio" loading="lazy">
+                    <div class="lc-caption"><strong>Precisão laboratorial</strong><span>A rotina técnica da Labmedic e Diag Rio refletida em uma gestão de pessoas igualmente precisa.</span></div>
+                </div>
+                <div class="lc-slide">
+                    <img src="https://sspark.genspark.ai/cfimages?u1=svQK0XICneV7BUcaLCIuBAninlxW3KEYrHlM3mWXZx%2BfuMUJ67zYGA1nlPu2e4HpC2QJv90dVgFMFQkcFJW%2BkaFZSa1o5GkiCcISl64a0ZTjlHJebYDJ7Yf2%2FvI%2Fwd79A87q6i2lhhJPykjkWI%2BEI0vxSWWZ4YDNzvuSfmU%3D%3D&u2=17wkqsTdcJLogW%2FM&width=2560" alt="Laboratório de análises clínicas com equipamentos modernos" loading="lazy">
+                    <div class="lc-caption"><strong>Diagnóstico de confiança</strong><span>Equipamentos e processos de ponta atendidos por equipes valorizadas e bem geridas.</span></div>
+                </div>
+                <div class="lc-slide">
+                    <img src="https://sspark.genspark.ai/cfimages?u1=QpesoaHK3tZnjcSTBVhXOcAVGUp1r%2FdaXgZatI8%2FrvE%2BAvsUFV%2Fzv%2Fitf4PtOeTABLaAcCzsC553pG0BK5FwLCIUr%2Bh7bnJVQlDAkOgrBHd1%2F14qakcCsNeGIjgTTuJPE38kJQ98%3D%3D&u2=PuhParzp3jEHwIfg&width=2560" alt="Equipamentos de laboratório para exames de sangue" loading="lazy">
+                    <div class="lc-caption"><strong>Análises clínicas</strong><span>Da coleta ao resultado: cada etapa depende de colaboradores com a folha em dia.</span></div>
+                </div>
+                <div class="lc-slide">
+                    <img src="https://sspark.genspark.ai/cfimages?u1=w6vAzc8opqIKZl6pyEclAsawQ5cHG%2FFT6cqLPWKzRJfmIiRchKptE%2Fr149%2FjfjimpKe3ZUOzPSy%2FOZ9ZX88FWBmAtUBTPsn%2B00l9N6pyq68%2FwZ5AP8p%2FTcKV9ywAsu2d2vvPt3zum8bi3%2F9fp4yOhcrDZKa0oR9joBbr3sxPHfbRGf02wA%3D%3D&u2=oHDR%2FK42EIaUT%2Fg0&width=2560" alt="Equipe de contabilidade trabalhando com folha de pagamento" loading="lazy">
+                    <div class="lc-caption"><strong>Gestão financeira</strong><span>Proventos, descontos e relatórios consolidados para o financeiro e a contabilidade.</span></div>
+                </div>
+            </div>
+            <button type="button" class="lc-btn prev" id="lcPrev" aria-label="Imagem anterior">&#8249;</button>
+            <button type="button" class="lc-btn next" id="lcNext" aria-label="Próxima imagem">&#8250;</button>
+            <div class="lc-dots" id="lcDots"></div>
         </div>
+        <script>
+        (function () {
+            var track = document.getElementById('lcTrack');
+            if (!track) return;
+            var slides = track.children.length;
+            var dotsWrap = document.getElementById('lcDots');
+            var progress = document.getElementById('lcProgress');
+            var carousel = document.getElementById('landingCarousel');
+            var idx = 0, timer = null, INTERVAL = 5000;
+
+            for (var i = 0; i < slides; i++) {
+                var d = document.createElement('button');
+                d.type = 'button'; d.className = 'lc-dot';
+                d.setAttribute('aria-label', 'Ir para imagem ' + (i + 1));
+                (function (n) { d.addEventListener('click', function () { go(n); restart(); }); })(i);
+                dotsWrap.appendChild(d);
+            }
+            var dots = dotsWrap.children;
+
+            function go(n) {
+                idx = (n + slides) % slides;
+                track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+                for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('active', i === idx);
+                progress.style.transition = 'none'; progress.style.width = '0%';
+                void progress.offsetWidth;
+                progress.style.transition = 'width ' + INTERVAL + 'ms linear';
+                progress.style.width = '100%';
+            }
+            function next() { go(idx + 1); }
+            function restart() { clearInterval(timer); timer = setInterval(next, INTERVAL); }
+
+            document.getElementById('lcPrev').addEventListener('click', function () { go(idx - 1); restart(); });
+            document.getElementById('lcNext').addEventListener('click', function () { next(); restart(); });
+            carousel.addEventListener('mouseenter', function () { clearInterval(timer); progress.style.transition = 'none'; });
+            carousel.addEventListener('mouseleave', function () { restart(); progress.style.transition = 'width ' + INTERVAL + 'ms linear'; progress.style.width = '100%'; });
+
+            var touchX = null;
+            carousel.addEventListener('touchstart', function (e) { touchX = e.touches[0].clientX; }, { passive: true });
+            carousel.addEventListener('touchend', function (e) {
+                if (touchX === null) return;
+                var dx = e.changedTouches[0].clientX - touchX;
+                if (Math.abs(dx) > 40) { dx < 0 ? next() : go(idx - 1); restart(); }
+                touchX = null;
+            }, { passive: true });
+
+            go(0); restart();
+        })();
+        </script>
     </div>
     <div class="landing-features">
         <div class="landing-feature-card">
@@ -306,11 +379,11 @@
             <button class="btn-primary" onclick="openModal()">+ Novo Colaborador</button>
             <button class="btn-outline" onclick="adicionarNovaEmpresa()" title="Cadastrar nova empresa/unidade">🏢 + Nova Empresa</button>
             <label class="btn-outline btn-file">
-                📥 Importar Excel
+                📥 Importar Planilha Antiga
                 <input type="file" id="importFile" accept=".xlsx,.xls" onchange="handleImportFile(event)">
             </label>
             <label class="btn-outline btn-file" title="Reimportar uma planilha gerada por este sistema (Exportar Excel), restaurando todos os colaboradores e a competência">
-                🔄 Importar Planilha do Sistema
+                🔄 Importar Planilha Nova
                 <input type="file" id="importSystemFile" accept=".xlsx,.xls" onchange="handleImportSystemFile(event)">
             </label>
             <button class="btn-success" onclick="exportExcel()">📊 Exportar Excel</button>
@@ -1423,7 +1496,7 @@
         }
 
         // --- Aba 4 (oculta): dados completos, campo a campo, para reimportação exata pelo próprio sistema ---
-        // Esta aba é a fonte de verdade usada pelo botão "Importar Planilha do Sistema".
+        // Esta aba é a fonte de verdade usada pelo botão "Importar Planilha Nova".
         const ws4 = workbook.addWorksheet('Dados Completos (Sistema)');
         ws4.getCell('A1').value = `Competência: ${currentPeriodLabel || ''}`;
         ws4.getCell('A1').font = { italic: true, color: { argb: 'FF64748B' } };
@@ -2069,6 +2142,7 @@
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
