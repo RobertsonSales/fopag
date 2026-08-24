@@ -625,8 +625,23 @@
     const BASE_CATEGORIAS = ['CLT', 'MEI/PJ', 'CLT + MEI/PJ'];
     let customCategorias = [];
 
+    // Categorias de vínculo presentes nos dados (ex.: "PRO-LABORE" vinda de importação
+    // ou de cadastro anterior). Assim o filtro nunca esconde um vínculo que existe
+    // na lista de colaboradores.
+    function categoriasNosDados() {
+        try {
+            return [...new Set((payrollData || [])
+                .map(e => (e && e.tipo ? String(e.tipo).trim() : ''))
+                .filter(t => t.length > 0))];
+        } catch (e) { return []; }
+    }
+
     function todasCategorias() {
-        return [...BASE_CATEGORIAS, ...customCategorias];
+        const lista = [...BASE_CATEGORIAS, ...customCategorias];
+        categoriasNosDados().forEach(t => {
+            if (!lista.some(c => c.toLowerCase() === t.toLowerCase())) lista.push(t);
+        });
+        return lista;
     }
 
     function renderCategoriaOptions() {
@@ -913,8 +928,9 @@
 
     // --- FILTROS ---
     function applyFilters() {
-        // Garante que o seletor de empresas reflita os dados atuais antes de filtrar.
+        // Garante que os seletores (Empresa e Categoria de Vínculo) reflitam os dados atuais.
         renderEmpresaOptions();
+        renderCategoriaOptions();
         const empresa = document.getElementById('filterEmpresa').value;
         const categoria = document.getElementById('filterCategoria').value;
         const buscaRaw = (document.getElementById('filterBusca')?.value || '').trim();
