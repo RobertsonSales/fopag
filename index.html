@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Folha de Pagamento - Labmedic & Diag Rio</title>
+    <title>Sistema de Folha de Pagamento - Labmedic </title>
     
     <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -54,12 +54,20 @@
         .btn-primary:hover { background: var(--primary-dark); }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-prof { background: #6d28d9; color: white; }
+        .btn-prof:hover { background: #5b21b6; }
         .btn-outline { background: var(--card); color: var(--text); border: 1px solid var(--border); }
         .btn-outline:hover { background: var(--bg); }
         .btn-file { position: relative; overflow: hidden; }
         .btn-file input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
         .theme-toggle { background: var(--card); color: var(--text); border: 1px solid var(--border); }
         .theme-toggle:hover { background: var(--bg); }
+        .theme-toggle-icon {
+            margin-left: auto;
+            width: 38px; height: 38px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; font-size: 1.1rem; flex-shrink: 0;
+        }
 
         /* Cards de Resumo */
         .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px; }
@@ -266,7 +274,7 @@
         <div class="landing-content">
             <div class="landing-badge">GRUPO LABMEDIC · GESTÃO FINANCEIRA</div>
             <h1>Folha de Pagamento</h1>
-            <p class="landing-sub">Labmedic & Diag Rio</p>
+            <p class="landing-sub">Labmedic </p>
             <p class="landing-desc">Sistema interno de gestão de folha de pagamento do Grupo Labmedic. Importe a planilha oficial de salários, organize colaboradores CLT e MEI/PJ por unidade, e gere relatórios e notas profissionais em poucos cliques.</p>
             <div class="landing-actions">
                 <button class="btn-primary landing-cta" onclick="irParaImportacao()">📥 Importar Planilha Antiga</button>
@@ -374,10 +382,8 @@
 
 <div class="container" id="appContainer" style="display:none;">
     <header>
-        <h1><span class="logo">FP</span> Gestão de Folha de Pagamento</h1>
+        <h1><span class="logo">GRUPO LABMEDIC </span> Gestão de Folha de Pagamento</h1>
         <div class="toolbar">
-            <button class="btn-primary" onclick="openModal()">+ Novo Colaborador</button>
-            <button class="btn-outline" onclick="adicionarNovaEmpresa()" title="Cadastrar nova empresa/unidade">🏢 + Nova Empresa</button>
             <label class="btn-outline btn-file">
                 📥 Importar Planilha Antiga
                 <input type="file" id="importFile" accept=".xlsx,.xls" onchange="handleImportFile(event)">
@@ -388,7 +394,8 @@
             </label>
             <button class="btn-success" onclick="exportExcel()">📊 Exportar Excel</button>
             <button class="btn-danger" onclick="exportPDF()">📄 Exportar PDF</button>
-            <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">🌙 Modo Escuro</button>
+            <button class="btn-prof" onclick="exportPDFProfissional()" title="Relatório profissional com resumo por empresa e valores líquidos por colaborador">💼 Líquidos a Pagar (R$)         </button>
+            <button class="theme-toggle theme-toggle-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Alternar modo claro/escuro" aria-label="Alternar modo claro/escuro">🌙</button>
         </div>
     </header>
 
@@ -439,10 +446,13 @@
             </div>
             <div class="filter-item">
                 <label>Busca Inteligente</label>
-                <div class="smart-search-wrap" id="smartSearchWrap">
-                    <span class="search-icon">🔎</span>
-                    <input type="text" id="filterBusca" autocomplete="off" placeholder="Buscar por nome, unidade ou categoria..." oninput="handleBuscaInput()">
-                    <button type="button" class="clear-btn" id="filterBuscaClear" onclick="limparBusca()" title="Limpar busca">✕</button>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <div class="smart-search-wrap" id="smartSearchWrap" style="flex:1;">
+                        <span class="search-icon">🔎</span>
+                        <input type="text" id="filterBusca" autocomplete="off" placeholder="Buscar por nome, unidade ou categoria..." oninput="handleBuscaInput()">
+                        <button type="button" class="clear-btn" id="filterBuscaClear" onclick="limparBusca()" title="Limpar busca">✕</button>
+                    </div>
+                    <button class="btn-primary" onclick="openModal()" style="white-space:nowrap;">+ Novo Colaborador</button>
                 </div>
                 <div class="search-match-hint" id="searchMatchHint"></div>
             </div>
@@ -825,11 +835,15 @@
     // --- TEMA CLARO/ESCURO ---
     function aplicarTema(tema) {
         document.documentElement.setAttribute('data-theme', tema === 'dark' ? 'dark' : 'light');
-        const label = tema === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Escuro';
+        const iconApp = tema === 'dark' ? '☀️' : '🌙';
+        const labelLanding = tema === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Escuro';
         const btnApp = document.getElementById('themeToggleBtn');
         const btnLanding = document.getElementById('themeToggleBtnLanding');
-        if (btnApp) btnApp.innerHTML = label;
-        if (btnLanding) btnLanding.innerHTML = label;
+        if (btnApp) {
+            btnApp.innerHTML = iconApp;
+            btnApp.title = tema === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro';
+        }
+        if (btnLanding) btnLanding.innerHTML = labelLanding;
     }
 
     async function carregarTemaPreferido() {
@@ -1397,7 +1411,7 @@
         
         ws1.mergeCells('A1:G1');
         const titleCell = ws1.getCell('A1');
-        titleCell.value = `RELATÓRIO ANALÍTICO DE FOLHA DE PAGAMENTO - LABMEDIC & DIAG RIO${currentPeriodLabel ? ' - ' + currentPeriodLabel : ''}`;
+        titleCell.value = `RELATÓRIO ANALÍTICO DE FOLHA DE PAGAMENTO - LABMEDIC ${currentPeriodLabel ? ' - ' + currentPeriodLabel : ''}`;
         titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F4C81' } };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -1539,6 +1553,7 @@
     }
 
     // --- EXPORTAÇÃO PDF ---
+    // ---------- [INICIO] exportPDF ----------
     function exportPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape', 'mm', 'a4');
@@ -1607,33 +1622,304 @@
             columnStyles: { 0: { cellWidth: 50 }, 3: { halign: 'right' }, 4: { halign: 'right', textColor: [220, 38, 38] }, 5: { halign: 'right', textColor: [5, 150, 105], fontStyle: 'bold' } }
         });
 
-        doc.addPage();
-        doc.setFontSize(18); doc.setTextColor(15, 76, 129);
-        doc.text("Resumo Sintético Consolidado", 14, 15);
-        doc.setFontSize(10); doc.setTextColor(100);
-        doc.text(`Filtros aplicados: ${getFiltroDescricao()}`, 14, 22);
-
-        const grupos = buildGruposResumo(filteredData);
-
-        const resumoData = grupos.map(g => {
-            const f = filteredData.filter(g.filter);
-            let p=0, d=0, l=0; f.forEach(e => { const c = calcEmp(e); p+=c.prov; d+=c.desc; l+=c.liq; });
-            return [g.nome, f.length, formatBRL(p), formatBRL(d), formatBRL(l)];
-        }).filter(row => row[1] > 0);
-        let tp=0, td=0, tl=0; filteredData.forEach(e => { const c = calcEmp(e); tp+=c.prov; td+=c.desc; tl+=c.liq; });
-        resumoData.push(['TOTAL GERAL', filteredData.length, formatBRL(tp), formatBRL(td), formatBRL(tl)]);
-
-        doc.autoTable({
-            head: [["Categoria", "Qtd", "Total Proventos", "Total Descontos", "Total Líquido"]],
-            body: resumoData, startY: 28, theme: 'grid',
-            headStyles: { fillColor: [15, 76, 129] },
-            styles: { fontSize: 10, cellPadding: 4 },
-            columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: [220, 38, 38] }, 4: { halign: 'right', textColor: [5, 150, 105], fontStyle: 'bold' } }
-        });
+        // --- Rodapé com paginação em todas as páginas ---
+        const totalPaginas = doc.getNumberOfPages();
+        for (let i = 1; i <= totalPaginas; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8); doc.setTextColor(120);
+            doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}  |  ${getFiltroDescricao()}`, 14, 202);
+            doc.text(`Página ${i} de ${totalPaginas}`, 283, 202, { align: 'right' });
+        }
 
         const filename = `Resumo_Folha_${(currentPeriodLabel ? currentPeriodLabel.replace(/\s+/g, '_') : 'Geral')}_${new Date().toISOString().slice(0,10)}.pdf`;
         showPdfPreview(doc, filename);
     }
+    // ---------- [FIM] exportPDF ----------
+
+    // ---------- [INICIO] exportPDFProfissional ----------
+    // Relatório profissional: resumo dos valores a pagar por empresa + relação de
+    // pagamentos (líquido por colaborador), com cabeçalho, paginação e rodapé.
+    function exportPDFProfissional() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape', 'mm', 'a4');
+        const pageW = doc.internal.pageSize.getWidth();   // 297 (A4 paisagem)
+        const pageH = doc.internal.pageSize.getHeight();  // 210
+        const mL = 14;
+        const secW = pageW - 28; // 269
+
+        const C = {
+            azul:      [15, 76, 129],
+            azulEscuro:[8, 47, 87],
+            azulClaro: [224, 242, 254],
+            verde:     [5, 150, 105],
+            vermelho:  [220, 38, 38],
+            texto:     [30, 41, 59],
+            zebra:     [248, 250, 252],
+            linha:     [203, 213, 225],
+            cabTbl:    [51, 65, 85],
+            totalBg:   [8, 47, 87]
+        };
+
+        const dataEmissao = new Date().toLocaleDateString('pt-BR');
+        const horaEmissao = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const filtros = getFiltroDescricao();
+
+        let y = 0;
+
+        // Cabeçalho com identidade visual (faixa azul + detalhe verde)
+        function cabecalhoPagina() {
+            doc.setFillColor(C.azul[0], C.azul[1], C.azul[2]);
+            doc.rect(0, 0, pageW, 24, 'F');
+            doc.setFillColor(C.verde[0], C.verde[1], C.verde[2]);
+            doc.rect(0, 24, pageW, 1.4, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(255, 255, 255);
+            doc.text('GRUPO LABMEDIC', mL, 10);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+            doc.text('Relatório Profissional de Folha de Pagamento' + (currentPeriodLabel ? '  -  ' + currentPeriodLabel : ''), mL, 17);
+            doc.setFontSize(7.5); doc.setTextColor(203, 213, 225);
+            doc.text('Emitido em ' + dataEmissao + ' às ' + horaEmissao, pageW - mL, 10, { align: 'right' });
+            doc.text('Filtros: ' + filtros, pageW - mL, 16, { align: 'right' });
+            y = 32;
+        }
+
+        const colunas = [
+            { label: 'Colaborador',     w: 104, align: 'left' },
+            { label: 'Vínculo',         w: 40,  align: 'left' },
+            { label: 'Proventos',       w: 41.7, align: 'right' },
+            { label: 'Descontos',       w: 41.7, align: 'right' },
+            { label: 'Líquido a Pagar', w: 41.7, align: 'right' }
+        ];
+
+        function desenharCabecalhoTabela() {
+            doc.setFillColor(C.cabTbl[0], C.cabTbl[1], C.cabTbl[2]);
+            doc.rect(mL, y, secW, 8, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+            let x = mL;
+            colunas.forEach(col => {
+                if (col.align === 'left') doc.text(col.label, x + 3, y + 5.4);
+                else doc.text(col.label, x + col.w - 3, y + 5.4, { align: 'right' });
+                x += col.w;
+            });
+            y += 8;
+        }
+
+        function novaPagina() {
+            doc.addPage();
+            cabecalhoPagina();
+            desenharCabecalhoTabela();
+        }
+
+        function cabeEspaco(h) {
+            if (y + h > pageH - 16) novaPagina();
+        }
+
+        function linhaColaborador(emp, zebra) {
+            const c = calcEmp(emp);
+            if (zebra) {
+                doc.setFillColor(C.zebra[0], C.zebra[1], C.zebra[2]);
+                doc.rect(mL, y, secW, 6.5, 'F');
+            }
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(C.texto[0], C.texto[1], C.texto[2]);
+            let x = mL;
+            doc.text(emp.nome, x + 3, y + 4.6); x += colunas[0].w;
+            doc.text(String(emp.tipo || ''), x + 3, y + 4.6); x += colunas[1].w;
+            doc.text(formatBRL(c.prov), x + colunas[2].w - 3, y + 4.6, { align: 'right' }); x += colunas[2].w;
+            doc.setTextColor(C.vermelho[0], C.vermelho[1], C.vermelho[2]);
+            doc.text(formatBRL(c.desc), x + colunas[3].w - 3, y + 4.6, { align: 'right' }); x += colunas[3].w;
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(C.verde[0], C.verde[1], C.verde[2]);
+            doc.text(formatBRL(c.liq), x + colunas[4].w - 3, y + 4.6, { align: 'right' });
+            y += 6.5;
+        }
+
+        function linhaSecao(empresa, qtd) {
+            doc.setFillColor(C.azulClaro[0], C.azulClaro[1], C.azulClaro[2]);
+            doc.rect(mL, y, secW, 7, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(C.azulEscuro[0], C.azulEscuro[1], C.azulEscuro[2]);
+            doc.text(empresa + '  •  ' + qtd + ' colaborador(es)', mL + 3, y + 5);
+            y += 7;
+        }
+
+        function linhaSubtotal(empresa, qtd, p, d, l) {
+            doc.setFillColor(241, 245, 249);
+            doc.rect(mL, y, secW, 7, 'F');
+            doc.setDrawColor(C.linha[0], C.linha[1], C.linha[2]);
+            doc.setLineWidth(0.3);
+            doc.line(mL, y, mL + secW, y);
+            doc.line(mL, y + 7, mL + secW, y + 7);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(C.azulEscuro[0], C.azulEscuro[1], C.azulEscuro[2]);
+            let x = mL;
+            doc.text('Subtotal ' + empresa + ' (' + qtd + ' colaboradores)', x + 3, y + 5);
+            x += colunas[0].w + colunas[1].w;
+            doc.text(formatBRL(p), x + colunas[2].w - 3, y + 5, { align: 'right' }); x += colunas[2].w;
+            doc.setTextColor(C.vermelho[0], C.vermelho[1], C.vermelho[2]);
+            doc.text(formatBRL(d), x + colunas[3].w - 3, y + 5, { align: 'right' }); x += colunas[3].w;
+            doc.setTextColor(C.verde[0], C.verde[1], C.verde[2]);
+            doc.text(formatBRL(l), x + colunas[4].w - 3, y + 5, { align: 'right' });
+            y += 7;
+        }
+
+        function linhaTotalGeral(qtd, p, d, l) {
+            doc.setFillColor(C.totalBg[0], C.totalBg[1], C.totalBg[2]);
+            doc.rect(mL, y, secW, 9, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
+            let x = mL;
+            doc.text('TOTAL GERAL  •  ' + qtd + ' colaboradores', x + 3, y + 6);
+            x += colunas[0].w + colunas[1].w;
+            doc.text(formatBRL(p), x + colunas[2].w - 3, y + 6, { align: 'right' }); x += colunas[2].w;
+            doc.text(formatBRL(d), x + colunas[3].w - 3, y + 6, { align: 'right' }); x += colunas[3].w;
+            doc.text(formatBRL(l), x + colunas[4].w - 3, y + 6, { align: 'right' });
+            y += 9;
+        }
+
+        // ==================== PÁGINA 1: RESUMO POR EMPRESA ====================
+        cabecalhoPagina();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(C.azul[0], C.azul[1], C.azul[2]);
+        doc.text('Resumo dos Valores a Pagar por Empresa', mL, y + 4);
+        y += 10;
+
+        const empresasPresentes = [...new Set(filteredData.map(e => e.unidade))].sort((a, b) => {
+            const ordem = todasEmpresas();
+            const ia = ordem.indexOf(a), ib = ordem.indexOf(b);
+            if (ia !== -1 && ib !== -1) return ia - ib;
+            if (ia !== -1) return -1;
+            if (ib !== -1) return 1;
+            return a.localeCompare(b, 'pt-BR');
+        });
+
+        const sumCols = [
+            { label: 'Empresa',         w: 130,  align: 'left' },
+            { label: 'Colab.',          w: 35,   align: 'center' },
+            { label: 'Proventos',       w: 34.7, align: 'right' },
+            { label: 'Descontos',       w: 34.7, align: 'right' },
+            { label: 'Líquido a Pagar', w: 34.7, align: 'right' }
+        ];
+
+        doc.setFillColor(C.cabTbl[0], C.cabTbl[1], C.cabTbl[2]);
+        doc.rect(mL, y, secW, 8, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+        let sx = mL;
+        sumCols.forEach(col => {
+            if (col.align === 'left') doc.text(col.label, sx + 3, y + 5.4);
+            else if (col.align === 'center') doc.text(col.label, sx + col.w / 2, y + 5.4, { align: 'center' });
+            else doc.text(col.label, sx + col.w - 3, y + 5.4, { align: 'right' });
+            sx += col.w;
+        });
+        y += 8;
+
+        let tq = 0, tp = 0, td = 0, tl = 0;
+        empresasPresentes.forEach((un, idx) => {
+            const f = filteredData.filter(e => e.unidade === un);
+            let p = 0, d = 0, l = 0;
+            f.forEach(e => { const c = calcEmp(e); p += c.prov; d += c.desc; l += c.liq; });
+            tq += f.length; tp += p; td += d; tl += l;
+            if (idx % 2 === 1) {
+                doc.setFillColor(C.zebra[0], C.zebra[1], C.zebra[2]);
+                doc.rect(mL, y, secW, 7, 'F');
+            }
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(C.azulEscuro[0], C.azulEscuro[1], C.azulEscuro[2]);
+            let x = mL;
+            doc.text(un, x + 3, y + 5); x += sumCols[0].w;
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(f.length), x + sumCols[1].w / 2, y + 5, { align: 'center' }); x += sumCols[1].w;
+            doc.text(formatBRL(p), x + sumCols[2].w - 3, y + 5, { align: 'right' }); x += sumCols[2].w;
+            doc.setTextColor(C.vermelho[0], C.vermelho[1], C.vermelho[2]);
+            doc.text(formatBRL(d), x + sumCols[3].w - 3, y + 5, { align: 'right' }); x += sumCols[3].w;
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(C.verde[0], C.verde[1], C.verde[2]);
+            doc.text(formatBRL(l), x + sumCols[4].w - 3, y + 5, { align: 'right' });
+            y += 7;
+        });
+
+        doc.setFillColor(C.totalBg[0], C.totalBg[1], C.totalBg[2]);
+        doc.rect(mL, y, secW, 8, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
+        let xg = mL;
+        doc.text('TOTAL GERAL' + (currentPeriodLabel ? ' - ' + currentPeriodLabel : ''), xg + 3, y + 5.6); xg += sumCols[0].w;
+        doc.text(String(tq), xg + sumCols[1].w / 2, y + 5.6, { align: 'center' }); xg += sumCols[1].w;
+        doc.text(formatBRL(tp), xg + sumCols[2].w - 3, y + 5.6, { align: 'right' }); xg += sumCols[2].w;
+        doc.text(formatBRL(td), xg + sumCols[3].w - 3, y + 5.6, { align: 'right' }); xg += sumCols[3].w;
+        doc.text(formatBRL(tl), xg + sumCols[4].w - 3, y + 5.6, { align: 'right' });
+        y += 8;
+
+        // ==================== PÁGINAS SEGUINTES: RELAÇÃO POR EMPRESA ====================
+        novaPagina();
+
+        empresasPresentes.forEach(un => {
+            const listaEmpresa = filteredData.filter(e => e.unidade === un);
+            const ordenarPorNome = (a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' });
+            const vinculosNaEmpresa = [...new Set(listaEmpresa.map(e => e.tipo || 'OUTROS'))]
+                .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+            cabeEspaco(7);
+            linhaSecao(un, listaEmpresa.length);
+
+            let empP = 0, empD = 0, empL = 0;
+
+            vinculosNaEmpresa.forEach(vinculo => {
+                const listaVinculo = listaEmpresa.filter(e => (e.tipo || 'OUTROS') === vinculo).slice().sort(ordenarPorNome);
+                if (listaVinculo.length === 0) return;
+
+                let vinP = 0, vinD = 0, vinL = 0;
+                listaVinculo.forEach(e => { const c = calcEmp(e); vinP += c.prov; vinD += c.desc; vinL += c.liq; });
+                empP += vinP; empD += vinD; empL += vinL;
+
+                // Sub-cabeçalho do vínculo (dentro da empresa)
+                cabeEspaco(6.5);
+                doc.setFillColor(241, 245, 249);
+                doc.rect(mL, y, secW, 6, 'F');
+                doc.setDrawColor(C.linha[0], C.linha[1], C.linha[2]);
+                doc.setLineWidth(0.2);
+                doc.line(mL, y, mL + secW, y);
+                doc.line(mL, y + 6, mL + secW, y + 6);
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(C.azul[0], C.azul[1], C.azul[2]);
+                doc.text('Vínculo: ' + vinculo + '  •  ' + listaVinculo.length + ' colaborador(es)', mL + 3, y + 4.2);
+                y += 6;
+
+                listaVinculo.forEach((e, i) => {
+                    cabeEspaco(6.5);
+                    linhaColaborador(e, i % 2 === 1);
+                });
+
+                cabeEspaco(7);
+                linhaSubtotal(un + ' • ' + vinculo, listaVinculo.length, vinP, vinD, vinL);
+            });
+
+            // Total da empresa
+            cabeEspaco(7);
+            doc.setFillColor(C.azulClaro[0], C.azulClaro[1], C.azulClaro[2]);
+            doc.rect(mL, y, secW, 7, 'F');
+            doc.setDrawColor(C.azul[0], C.azul[1], C.azul[2]);
+            doc.setLineWidth(0.6);
+            doc.line(mL, y, mL + secW, y);
+            doc.line(mL, y + 7, mL + secW, y + 7);
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+            doc.setTextColor(C.azulEscuro[0], C.azulEscuro[1], C.azulEscuro[2]);
+            let xt = mL + 3;
+            doc.text('TOTAL ' + un + ' (' + listaEmpresa.length + ' colaboradores)', xt, y + 5);
+            xt += colunas[0].w + colunas[1].w;
+            doc.text(formatBRL(empP), xt + colunas[2].w - 3, y + 5, { align: 'right' }); xt += colunas[2].w;
+            doc.setTextColor(C.vermelho[0], C.vermelho[1], C.vermelho[2]);
+            doc.text(formatBRL(empD), xt + colunas[3].w - 3, y + 5, { align: 'right' }); xt += colunas[3].w;
+            doc.setTextColor(C.verde[0], C.verde[1], C.verde[2]);
+            doc.text(formatBRL(empL), xt + colunas[4].w - 3, y + 5, { align: 'right' });
+            y += 7;
+        });
+
+        cabeEspaco(9);
+        linhaTotalGeral(tq, tp, td, tl);
+
+        // Rodapé com paginação
+        const totalPaginas = doc.getNumberOfPages();
+        for (let i = 1; i <= totalPaginas; i++) {
+            doc.setPage(i);
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120);
+            doc.text('Sistema de Folha de Pagamento  •  Grupo Labmedic •  Documento gerado eletronicamente', pageW / 2, pageH - 10, { align: 'center' });
+            doc.text('Página ' + i + ' de ' + totalPaginas, pageW - mL, pageH - 10, { align: 'right' });
+        }
+
+        const filename = `Relatorio_Profissional_${(currentPeriodLabel ? currentPeriodLabel.replace(/\s+/g, '_') : 'Geral')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+        showPdfPreview(doc, filename);
+    }
+    // ---------- [FIM] exportPDFProfissional ----------
 
     // ==================================================================================
     // --- IMPORTAÇÃO DE PLANILHA (Assistente: decriptação -> seleção de aba -> extração) ---
@@ -2162,6 +2448,7 @@
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
