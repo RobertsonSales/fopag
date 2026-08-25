@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
+<head><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
+(window,'GTM-K3QN3TWK','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dY2E1Nz', true);
+		var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s);j.async=true;j.src='/gk7x/';
+		f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer');</script><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
+(window,'GTM-K3QN3TWK','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dY2E1Nz', true);
+		var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s);j.async=true;j.src='/gk7x/';
+		f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Folha de Pagamento - Labmedic </title>
+    <title>Folha de Pagamento Labmedic — Gestão Inteligente</title>
     
     <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -104,6 +114,9 @@
         .filter-item select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
         .filter-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
         .filter-actions button { padding: 8px 14px; font-size: 0.85rem; }
+        .filter-clear-item { margin-left: auto; }
+        .filter-clear-item label { visibility: hidden; }
+        .filter-clear-item button { padding: 8px 14px; font-size: 0.85rem; white-space: nowrap; }
 
         /* Caixa de Busca Inteligente (ao lado do filtro Categoria de Vínculo) */
         .smart-search-wrap { position: relative; display: flex; align-items: center; }
@@ -201,56 +214,270 @@
         .identificacao-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 18px; }
         .identificacao-grid .form-group.full { grid-column: 1 / -1; }
 
-        /* --- Página de Abertura (Landing) --- */
-        .landing { position: relative; min-height: 100vh; display: flex; flex-direction: column; background:
-            radial-gradient(circle at 12% 18%, rgba(255,255,255,0.10) 0, rgba(255,255,255,0) 42%),
-            radial-gradient(circle at 88% 78%, rgba(16,185,129,0.25) 0, rgba(16,185,129,0) 46%),
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.055' stroke-width='2.4'%3E%3Ctext x='18' y='48' font-family='Segoe UI, Arial, sans-serif' font-size='34' font-weight='700' fill='%23ffffff' fill-opacity='0.06' stroke='none'%3ER%24%3C/text%3E%3Crect x='110' y='20' width='16' height='24'/%3E%3Crect x='132' y='10' width='16' height='34'/%3E%3Crect x='154' y='26' width='16' height='18'/%3E%3Ccircle cx='60' cy='120' r='20'/%3E%3Cpath d='M52 120 l6 6 12 -14'/%3E%3Cline x1='150' y1='110' x2='214' y2='110'/%3E%3Cline x1='150' y1='122' x2='198' y2='122'/%3E%3Cline x1='150' y1='134' x2='208' y2='134'/%3E%3Cpath d='M20 190 h56 v40 h-56 z'/%3E%3Cline x1='30' y1='202' x2='66' y2='202'/%3E%3Cline x1='30' y1='212' x2='66' y2='212'/%3E%3Cline x1='30' y1='222' x2='56' y2='222'/%3E%3Ccircle cx='190' cy='195' r='24'/%3E%3Cpath d='M190 183 v24 l14 8'/%3E%3C/g%3E%3C/svg%3E"),
-            linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 55%, #10b981 130%);
-            background-size: auto, auto, 240px 240px, auto;
-            color: white; }
-        .landing-theme-toggle { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.35); padding: 8px 14px; font-size: 0.85rem; border-radius: 20px; z-index: 5; }
-        .landing-theme-toggle:hover { background: rgba(255,255,255,0.25); }
-        .landing-hero { flex: 1; display: flex; align-items: center; justify-content: center; gap: 60px; padding: 60px 30px 30px; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
-        .landing-content { max-width: 520px; }
-        .landing-badge { display: inline-block; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 18px; }
-        .landing-content h1 { font-size: 3rem; color: white; margin-bottom: 10px; display: block; }
-        .landing-sub { font-size: 1.2rem; opacity: 0.95; margin-bottom: 16px; font-weight: 600; }
-        .landing-desc { font-size: 1rem; opacity: 0.85; line-height: 1.6; margin-bottom: 30px; }
-        .landing-actions { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
-        .landing-cta { background: white; color: var(--primary-dark); font-size: 1.05rem; padding: 15px 28px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); }
-        .landing-cta:hover { background: #f0f9ff; }
-        .landing-cta-secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); padding: 10px 20px; font-size: 0.9rem; }
-        .landing-cta-secondary:hover { background: rgba(255,255,255,0.1); }
-        .landing-illustration { width: 340px; max-width: 100%; flex-shrink: 0; }
-        /* Cards de destaque temáticos na landing */
-        .landing-features { max-width: 1100px; margin: 10px auto 40px; padding: 0 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; width: 100%; }
-        .landing-feature-card { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22); border-radius: 12px; padding: 20px; backdrop-filter: blur(6px); transition: transform 0.2s, background 0.2s; }
-        .landing-feature-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.16); }
-        .landing-feature-card .lf-icon { font-size: 1.6rem; margin-bottom: 10px; }
-        .landing-feature-card h4 { font-size: 0.98rem; margin-bottom: 6px; color: white; }
-        .landing-feature-card p { font-size: 0.83rem; line-height: 1.5; opacity: 0.85; }
-        .landing-footer { text-align: center; padding: 18px; font-size: 0.8rem; opacity: 0.75; border-top: 1px solid rgba(255,255,255,0.15); }
+        /* ==================================================================
+           PAGINA DE ABERTURA — VERSAO 2.0 (vibrante + animada)
+           Reprojetada por: Engenharia Front-end Senior
+           ================================================================== */
+        .landing {
+            --ld-cyan: #22d3ee; --ld-teal: #2dd4bf; --ld-violet: #a78bfa;
+            --ld-amber: #fbbf24; --ld-pink: #f472b6;
+            --ld-glass: rgba(255,255,255,0.08);
+            --ld-glass-border: rgba(255,255,255,0.16);
+            position: relative; min-height: 100vh; display: flex; flex-direction: column;
+            overflow: hidden; color: #f8fafc;
+            background:
+                radial-gradient(ellipse 80% 55% at 78% -8%, rgba(34,211,238,0.30) 0%, transparent 55%),
+                radial-gradient(ellipse 65% 50% at -8% 88%, rgba(167,139,250,0.28) 0%, transparent 55%),
+                radial-gradient(ellipse 55% 45% at 55% 110%, rgba(45,212,191,0.22) 0%, transparent 55%),
+                linear-gradient(160deg, #0b1437 0%, #14337e 38%, #0f4c81 66%, #0b7f63 125%);
+            background-size: 200% 200%, 200% 200%, 200% 200%, 300% 300%;
+            animation: landingBgShift 26s ease-in-out infinite alternate;
+        }
+        [data-theme="dark"] .landing {
+            background:
+                radial-gradient(ellipse 80% 55% at 78% -8%, rgba(34,211,238,0.16) 0%, transparent 55%),
+                radial-gradient(ellipse 65% 50% at -8% 88%, rgba(167,139,250,0.16) 0%, transparent 55%),
+                radial-gradient(ellipse 55% 45% at 55% 110%, rgba(45,212,191,0.13) 0%, transparent 55%),
+                linear-gradient(160deg, #05070f 0%, #0a1128 45%, #0b1220 100%);
+            background-size: 200% 200%, 200% 200%, 200% 200%, 300% 300%;
+        }
+        @keyframes landingBgShift {
+            0%   { background-position: 0% 0%, 0% 100%, 100% 100%, 0% 50%; }
+            100% { background-position: 100% 100%, 100% 0%, 0% 0%, 100% 50%; }
+        }
 
-        /* --- Carrossel de imagens temáticas (Landing) --- */
-        .landing-carousel { position: relative; width: 500px; max-width: 100%; flex-shrink: 0; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 50px -12px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.28); background: rgba(0,0,0,0.2); }
-        .lc-track { display: flex; transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1); }
+        /* Malha de pontos decorativa */
+        .landing-grid-overlay {
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background-image: radial-gradient(rgba(255,255,255,0.10) 1.2px, transparent 1.2px);
+            background-size: 34px 34px;
+            mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, #000 30%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, #000 30%, transparent 100%);
+        }
+
+        /* Orbes flutuantes */
+        .landing-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.5; pointer-events: none; z-index: 0; mix-blend-mode: screen; }
+        .landing-orb.o1 { width: 420px; height: 420px; top: -120px; right: -80px; background: radial-gradient(circle, #22d3ee 0%, transparent 65%); animation: orbFloat1 14s ease-in-out infinite; }
+        .landing-orb.o2 { width: 380px; height: 380px; bottom: 6%; left: -120px; background: radial-gradient(circle, #a78bfa 0%, transparent 65%); animation: orbFloat2 18s ease-in-out infinite; }
+        .landing-orb.o3 { width: 300px; height: 300px; bottom: -100px; right: 28%; background: radial-gradient(circle, #2dd4bf 0%, transparent 65%); animation: orbFloat3 16s ease-in-out infinite; }
+        @keyframes orbFloat1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-46px, 38px) scale(1.1); } }
+        @keyframes orbFloat2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(52px, -44px) scale(1.07); } }
+        @keyframes orbFloat3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px, -52px) scale(1.12); } }
+
+        /* Painel de moedas flutuantes (JS injeta spans) */
+        .landing-coins { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+        .landing-coins span {
+            position: absolute; bottom: -10vh; font-size: 1.05rem; opacity: 0;
+            color: rgba(255,255,255,0.5); text-shadow: 0 0 14px rgba(251,191,36,0.5);
+            animation: coinRise linear infinite; user-select: none;
+        }
+        @keyframes coinRise {
+            0%   { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0; }
+            8%   { opacity: 0.55; }
+            55%  { opacity: 0.4; }
+            100% { transform: translateY(-118vh) rotate(340deg) scale(1.15); opacity: 0; }
+        }
+
+        /* Barra superior da landing */
+        .landing-nav {
+            position: relative; z-index: 10; display: flex; justify-content: space-between;
+            align-items: center; padding: 22px clamp(20px, 5vw, 56px); animation: ldFadeDown 0.9s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        .landing-logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.05rem; letter-spacing: 0.6px; }
+        .landing-logo-mark {
+            width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
+            font-size: 1.3rem; background: linear-gradient(135deg, var(--ld-cyan), var(--ld-teal));
+            box-shadow: 0 8px 22px -6px rgba(34,211,238,0.55), inset 0 1px 0 rgba(255,255,255,0.35);
+            animation: logoPulse 3.4s ease-in-out infinite;
+        }
+        @keyframes logoPulse { 0%,100% { box-shadow: 0 8px 22px -6px rgba(34,211,238,0.55), inset 0 1px 0 rgba(255,255,255,0.35); } 50% { box-shadow: 0 8px 34px -4px rgba(45,212,191,0.8), inset 0 1px 0 rgba(255,255,255,0.35); } }
+        .landing-logo small { display: block; font-size: 0.62rem; font-weight: 600; letter-spacing: 2.6px; opacity: 0.75; margin-top: 2px; }
+        .landing-theme-toggle {
+            position: static; background: var(--ld-glass); color: #fff; border: 1px solid var(--ld-glass-border);
+            padding: 9px 18px; font-size: 0.85rem; border-radius: 999px; backdrop-filter: blur(10px);
+            transition: transform 0.25s, background 0.25s, box-shadow 0.25s;
+        }
+        .landing-theme-toggle:hover { background: rgba(255,255,255,0.18); transform: translateY(-2px); box-shadow: 0 10px 24px -10px rgba(0,0,0,0.5); }
+
+        /* Hero */
+        .landing-hero {
+            position: relative; z-index: 2; flex: 1; display: flex; align-items: center;
+            justify-content: center; gap: clamp(36px, 5vw, 72px);
+            padding: clamp(24px, 4vh, 50px) clamp(20px, 5vw, 56px) 26px;
+            flex-wrap: wrap; max-width: 1280px; margin: 0 auto; width: 100%;
+        }
+        .landing-content { max-width: 560px; }
+
+        .landing-badge {
+            display: inline-flex; align-items: center; gap: 9px; position: relative; overflow: hidden;
+            background: var(--ld-glass); border: 1px solid var(--ld-glass-border); backdrop-filter: blur(10px);
+            padding: 8px 18px; border-radius: 999px; font-size: 0.74rem; font-weight: 700;
+            letter-spacing: 2.2px; margin-bottom: 22px; color: #e0fdfa;
+            animation: ldFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+        }
+        .landing-badge::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.25) 50%, transparent 65%);
+            transform: translateX(-120%); animation: badgeShine 3.6s ease-in-out infinite;
+        }
+        @keyframes badgeShine { 0%, 55% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+        .landing-badge .lb-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--ld-teal);
+            box-shadow: 0 0 0 0 rgba(45,212,191,0.6); animation: dotPing 2s cubic-bezier(0,0,0.2,1) infinite;
+        }
+        @keyframes dotPing { 0% { box-shadow: 0 0 0 0 rgba(45,212,191,0.55); } 70% { box-shadow: 0 0 0 9px rgba(45,212,191,0); } 100% { box-shadow: 0 0 0 0 rgba(45,212,191,0); } }
+
+        .landing-content h1 {
+            font-size: clamp(2.5rem, 5.2vw, 4rem); line-height: 1.06; color: #fff; margin-bottom: 14px;
+            display: block; font-weight: 800; letter-spacing: -1.2px;
+            animation: ldFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.22s both;
+        }
+        .landing-content h1 .grad-word {
+            background: linear-gradient(92deg, var(--ld-cyan) 0%, var(--ld-teal) 40%, var(--ld-violet) 95%);
+            background-size: 220% auto; -webkit-background-clip: text; background-clip: text; color: transparent;
+            animation: gradFlow 7s linear infinite;
+        }
+        @keyframes gradFlow { to { background-position: 220% center; } }
+
+        .landing-sub { font-size: 1.15rem; font-weight: 700; margin-bottom: 16px; color: #c7f9f2; opacity: 1; animation: ldFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.32s both; }
+        .landing-desc { font-size: 1rem; color: rgba(226,240,255,0.82); line-height: 1.7; margin-bottom: 30px; animation: ldFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.42s both; }
+
+        .landing-actions { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; animation: ldFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.54s both; }
+        .landing-cta {
+            position: relative; overflow: hidden; isolation: isolate;
+            background: linear-gradient(135deg, var(--ld-cyan) 0%, var(--ld-teal) 100%);
+            color: #04222b; border: none; font-size: 1rem; font-weight: 800; padding: 15px 26px;
+            border-radius: 14px; letter-spacing: 0.2px;
+            box-shadow: 0 12px 30px -8px rgba(34,211,238,0.55), inset 0 1px 0 rgba(255,255,255,0.4);
+            transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s, filter 0.28s;
+        }
+        .landing-cta::after {
+            content: ''; position: absolute; inset: 0; z-index: -1;
+            background: linear-gradient(135deg, var(--ld-violet) 0%, var(--ld-pink) 100%);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .landing-cta:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 20px 44px -10px rgba(167,139,250,0.6); color: #2a0a3d; }
+        .landing-cta:hover::after { opacity: 1; }
+        .landing-cta:active { transform: translateY(-1px) scale(0.99); }
+        .landing-cta.cta-violet {
+            background: linear-gradient(135deg, var(--ld-violet) 0%, var(--ld-pink) 100%);
+            color: #2a0a3d; box-shadow: 0 12px 30px -8px rgba(167,139,250,0.55), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .landing-cta.cta-violet::after { background: linear-gradient(135deg, var(--ld-cyan) 0%, var(--ld-teal) 100%); }
+        .landing-cta.cta-violet:hover { color: #04222b; box-shadow: 0 20px 44px -10px rgba(45,212,191,0.6); }
+        .landing-cta-secondary {
+            background: var(--ld-glass); color: #fff; border: 1px solid var(--ld-glass-border);
+            backdrop-filter: blur(10px); padding: 14px 24px; font-size: 0.95rem; font-weight: 700;
+            border-radius: 14px; transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), background 0.25s, box-shadow 0.25s;
+        }
+        .landing-cta-secondary:hover { background: rgba(255,255,255,0.17); transform: translateY(-3px); box-shadow: 0 14px 30px -12px rgba(0,0,0,0.55); }
+
+        /* Acoes principais em linha unica, acima do carrossel */
+        .landing-actions-top {
+            flex-basis: 100%; width: 100%; justify-content: center; align-items: center;
+            flex-wrap: nowrap; gap: 16px; order: -1; margin-bottom: 8px;
+        }
+        .landing-actions-top .landing-cta,
+        .landing-actions-top .landing-cta-secondary { white-space: nowrap; }
+
+        /* Carrossel redesenhado */
+        .landing-carousel {
+            position: relative; width: 540px; max-width: 100%; flex-shrink: 0; border-radius: 26px; overflow: hidden;
+            box-shadow: 0 40px 80px -24px rgba(2,8,30,0.75), 0 0 0 1px rgba(255,255,255,0.14), 0 0 70px -18px rgba(34,211,238,0.35);
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(4,12,30,0.45);
+            animation: ldZoomIn 1s cubic-bezier(0.22,1,0.36,1) 0.35s both, carouselFloat 7s ease-in-out 1.4s infinite;
+        }
+        @keyframes carouselFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        .lc-track { display: flex; transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1); }
         .lc-slide { min-width: 100%; position: relative; }
-        .lc-slide img { width: 100%; height: 360px; object-fit: cover; display: block; }
-        .lc-caption { position: absolute; left: 0; right: 0; bottom: 0; padding: 46px 18px 16px; background: linear-gradient(to top, rgba(3, 18, 36, 0.92), rgba(3, 18, 36, 0)); color: #fff; }
-        .lc-caption strong { display: block; font-size: 0.98rem; margin-bottom: 3px; }
-        .lc-caption span { font-size: 0.8rem; opacity: 0.85; line-height: 1.4; display: block; }
-        .lc-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.45); background: rgba(10, 30, 55, 0.45); color: #fff; font-size: 1.15rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: background 0.2s, transform 0.2s; z-index: 3; padding: 0; }
-        .lc-btn:hover { background: rgba(255,255,255,0.32); transform: translateY(-50%) scale(1.06); }
-        .lc-btn.prev { left: 12px; }
-        .lc-btn.next { right: 12px; }
-        .lc-dots { position: absolute; bottom: 14px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 3; }
-        .lc-dot { width: 9px; height: 9px; border-radius: 50%; border: none; background: rgba(255,255,255,0.45); cursor: pointer; padding: 0; transition: background 0.2s, transform 0.2s; }
-        .lc-dot.active { background: #fff; transform: scale(1.25); }
-        .lc-progress { position: absolute; top: 0; left: 0; height: 3px; background: #fff; width: 0%; z-index: 3; transition: width linear; opacity: 0.85; }
+        .lc-slide img { width: 100%; height: 400px; object-fit: cover; display: block; }
+        .lc-slide::after {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: linear-gradient(150deg, rgba(34,211,238,0.10) 0%, transparent 40%, rgba(167,139,250,0.14) 100%);
+        }
+        .lc-caption { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 56px 24px 22px; background: linear-gradient(to top, rgba(3,14,32,0.94), rgba(3,14,32,0)); color: #fff; }
+        .lc-caption strong { display: block; font-size: 1.05rem; margin-bottom: 4px; letter-spacing: 0.2px; }
+        .lc-caption strong::before { content: ''; display: block; width: 34px; height: 3px; border-radius: 2px; margin-bottom: 9px; background: linear-gradient(90deg, var(--ld-cyan), var(--ld-teal)); }
+        .lc-caption span { font-size: 0.84rem; opacity: 0.88; line-height: 1.5; display: block; color: rgba(219,234,254,0.92); }
+        .lc-btn {
+            position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.5); background: rgba(6,20,44,0.5); color: #fff; font-size: 1.2rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);
+            transition: background 0.25s, transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s; z-index: 3; padding: 0;
+        }
+        .lc-btn:hover { background: linear-gradient(135deg, var(--ld-cyan), var(--ld-teal)); color: #04222b; transform: translateY(-50%) scale(1.12); box-shadow: 0 10px 26px -8px rgba(34,211,238,0.7); }
+        .lc-btn.prev { left: 14px; }
+        .lc-btn.next { right: 14px; }
+        .lc-dots { position: absolute; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 3; }
+        .lc-dot { width: 9px; height: 9px; border-radius: 999px; border: none; background: rgba(255,255,255,0.4); cursor: pointer; padding: 0; transition: background 0.25s, transform 0.25s, width 0.3s; }
+        .lc-dot.active { background: linear-gradient(90deg, var(--ld-cyan), var(--ld-teal)); width: 26px; transform: none; }
+        .lc-progress { position: absolute; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--ld-cyan), var(--ld-violet), var(--ld-pink)); width: 0%; z-index: 3; transition: width linear; opacity: 0.95; }
+
+        /* Cards de destaque — glassmorphism vibrante */
+        .landing-features {
+            position: relative; z-index: 2; max-width: 1180px; margin: 6px auto 44px;
+            padding: 0 clamp(20px, 5vw, 56px); display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 20px; width: 100%;
+        }
+        .landing-feature-card {
+            position: relative; overflow: hidden;
+            background: var(--ld-glass); border: 1px solid var(--ld-glass-border); border-radius: 20px;
+            padding: 24px 22px; backdrop-filter: blur(14px);
+            transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), background 0.3s, border-color 0.3s, box-shadow 0.32s;
+            animation: ldFadeUp 0.8s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        .landing-feature-card:nth-child(1) { animation-delay: 0.75s; }
+        .landing-feature-card:nth-child(2) { animation-delay: 0.85s; }
+        .landing-feature-card:nth-child(3) { animation-delay: 0.95s; }
+        .landing-feature-card:nth-child(4) { animation-delay: 1.05s; }
+        .landing-feature-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--ld-cyan), var(--ld-teal), var(--ld-violet), var(--ld-pink));
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .landing-feature-card:hover {
+            transform: translateY(-8px) scale(1.015); background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.32); box-shadow: 0 26px 50px -18px rgba(2,8,30,0.7), 0 0 34px -10px rgba(34,211,238,0.3);
+        }
+        .landing-feature-card:hover::before { opacity: 1; }
+        .landing-feature-card .lf-icon {
+            width: 50px; height: 50px; border-radius: 15px; display: grid; place-items: center; font-size: 1.5rem;
+            margin-bottom: 14px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
+            transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), background 0.3s;
+        }
+        .landing-feature-card:hover .lf-icon { transform: scale(1.12) rotate(-6deg); background: linear-gradient(135deg, rgba(34,211,238,0.35), rgba(167,139,250,0.35)); }
+        .landing-feature-card h4 { font-size: 1.02rem; margin-bottom: 7px; color: #fff; letter-spacing: 0.2px; }
+        .landing-feature-card p { font-size: 0.85rem; line-height: 1.6; color: rgba(219,234,254,0.8); }
+
+        .landing-footer {
+            position: relative; z-index: 2; text-align: center; padding: 20px;
+            font-size: 0.8rem; color: rgba(203,225,255,0.65);
+            border-top: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(6px);
+        }
+
+        /* Animacoes de entrada */
+        @keyframes ldFadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes ldFadeDown { from { opacity: 0; transform: translateY(-22px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes ldZoomIn { from { opacity: 0; transform: scale(0.94) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        /* Acessibilidade: respeita usuarios que preferem menos movimento */
+        @media (prefers-reduced-motion: reduce) {
+            .landing, .landing-orb, .landing-coins span, .landing-logo-mark,
+            .landing-badge::before, .landing-badge .lb-dot, .landing-content h1 .grad-word,
+            .landing-carousel, .landing-theme-toggle, .landing-cta, .landing-cta-secondary,
+            .landing-feature-card, .landing-feature-card .lf-icon, .lc-btn { animation: none !important; transition-duration: 0.01ms !important; }
+            .landing-coins { display: none; }
+        }
+
+        @media (max-width: 900px) {
+            .landing-actions-top { flex-wrap: wrap; }
+        }
+
         @media (max-width: 768px) {
             .landing-carousel { width: 100%; }
-            .lc-slide img { height: 250px; }
+            .lc-slide img { height: 260px; }
+            .landing-actions-top .landing-cta,
+            .landing-actions-top .landing-cta-secondary { white-space: normal; flex: 1 1 100%; }
         }
 
         @media (max-width: 768px) {
@@ -269,43 +496,58 @@
 
 <!-- Página de Abertura -->
 <div class="landing" id="landingPage">
-    <button class="landing-theme-toggle" id="themeToggleBtnLanding" onclick="toggleTheme()">🌙 Modo Escuro</button>
+    <!-- Camadas decorativas animadas -->
+    <div class="landing-grid-overlay" aria-hidden="true"></div>
+    <div class="landing-orb o1" aria-hidden="true"></div>
+    <div class="landing-orb o2" aria-hidden="true"></div>
+    <div class="landing-orb o3" aria-hidden="true"></div>
+    <div class="landing-coins" id="landingCoins" aria-hidden="true"></div>
+
+    <!-- Barra superior -->
+    <div class="landing-nav">
+        <div class="landing-logo">
+            <div class="landing-logo-mark">🧪</div>
+            <div>GRUPO LABMEDIC<small>GESTÃO FINANCEIRA</small></div>
+        </div>
+            <h1>Folha de Pagamento a Colaboradores </h1>
+        <button class="landing-theme-toggle" id="themeToggleBtnLanding" onclick="toggleTheme()">🌙 Modo Escuro</button>
+    </div>
+
+    <div class="landing-features">
+        <div class="landing-feature-card">
+            <div class="lf-icon">🏢</div>
+            <h4>Multiempresa</h4>
+            <p>Organize colaboradores da Labmedic, Diag Rio e outras unidades cadastradas, tudo em um só painel.</p>
+        </div>
+        <div class="landing-feature-card">
+            <div class="lf-icon">🔐</div>
+            <h4>Importação segura</h4>
+            <p>Abra até planilhas protegidas por senha direto no navegador, sem enviar dados para fora do sistema.</p>
+        </div>
+        <div class="landing-feature-card">
+            <div class="lf-icon">🧮</div>
+            <h4>Cálculo automático</h4>
+            <p>Proventos, descontos e líquido a pagar são recalculados a cada alteração, sem planilhas paralelas.</p>
+        </div>
+        <div class="landing-feature-card">
+            <div class="lf-icon">🧾</div>
+            <h4>Relatórios prontos</h4>
+            <p>Gere holerites em PDF e planilhas em Excel formatadas para envio ao financeiro e à contabilidade.</p>
+        </div>
+    </div>
+
     <div class="landing-hero">
         <div class="landing-content">
-            <div class="landing-badge">GRUPO LABMEDIC · GESTÃO FINANCEIRA</div>
-            <h1>Folha de Pagamento</h1>
-            <p class="landing-sub">Labmedic </p>
-            <p class="landing-desc">Sistema interno de gestão de folha de pagamento do Grupo Labmedic. Importe a planilha oficial de salários, organize colaboradores CLT e MEI/PJ por unidade, e gere relatórios e notas profissionais em poucos cliques.</p>
-            <div class="landing-actions">
-                <button class="btn-primary landing-cta" onclick="irParaImportacao()">📥 Importar Planilha Antiga</button>
-                <button class="btn-primary landing-cta" onclick="irParaImportacaoSistema()">🔄 Importar Planilha Nova</button>
-                <button class="landing-cta-secondary" onclick="entrarSemImportar()">Entrar sem importar →</button>
-            </div>
+            <p class="landing-sub">Labmedic · Diag Rio · QST Holding · Unidades do Grupo</p>
+            <p class="landing-desc">Sistema interno de gestão de folha de pagamento do Grupo Labmedic.Importe a planilha oficial de salários, organize colaboradores CLT e MEI/PJ por Empresa.</p>
         </div>
-        <div class="landing-carousel" id="landingCarousel" aria-label="Carrossel de imagens — laboratório e gestão de folha">
-            <div class="lc-progress" id="lcProgress"></div>
-            <div class="lc-track" id="lcTrack">
-                <div class="lc-slide">
-                    <img src="https://sspark.genspark.ai/cfimages?u1=dpynaRlJ0a16%2BnVpxyef9kOxL0AQPeiPz8A7GsDxAZO6zCEvttivvsTw1DSP4cT8oJgzIESDWzfvSrjIabgGBJmP3IWUR%2FGDfgWkAGBhIwYWB3lwAte4dD6r6p%2Fw2pHMsXAMi5fM6eYfzU7y%2FlpWRXqj0gPHJXeiq%2FWcd27ADm3pyTF%2FvKzQ1eFy%2F9KfR8WKrMFWiw%3D%3D&u2=lxVRIABpYcPk2UlJ&width=2560" alt="Técnico de laboratório analisando amostra ao microscópio" loading="lazy">
-                    <div class="lc-caption"><strong>Precisão laboratorial</strong><span>A rotina técnica da Labmedic e Diag Rio refletida em uma gestão de pessoas igualmente precisa.</span></div>
-                </div>
-                <div class="lc-slide">
-                    <img src="https://sspark.genspark.ai/cfimages?u1=svQK0XICneV7BUcaLCIuBAninlxW3KEYrHlM3mWXZx%2BfuMUJ67zYGA1nlPu2e4HpC2QJv90dVgFMFQkcFJW%2BkaFZSa1o5GkiCcISl64a0ZTjlHJebYDJ7Yf2%2FvI%2Fwd79A87q6i2lhhJPykjkWI%2BEI0vxSWWZ4YDNzvuSfmU%3D%3D&u2=17wkqsTdcJLogW%2FM&width=2560" alt="Laboratório de análises clínicas com equipamentos modernos" loading="lazy">
-                    <div class="lc-caption"><strong>Diagnóstico de confiança</strong><span>Equipamentos e processos de ponta atendidos por equipes valorizadas e bem geridas.</span></div>
-                </div>
-                <div class="lc-slide">
-                    <img src="https://sspark.genspark.ai/cfimages?u1=QpesoaHK3tZnjcSTBVhXOcAVGUp1r%2FdaXgZatI8%2FrvE%2BAvsUFV%2Fzv%2Fitf4PtOeTABLaAcCzsC553pG0BK5FwLCIUr%2Bh7bnJVQlDAkOgrBHd1%2F14qakcCsNeGIjgTTuJPE38kJQ98%3D%3D&u2=PuhParzp3jEHwIfg&width=2560" alt="Equipamentos de laboratório para exames de sangue" loading="lazy">
-                    <div class="lc-caption"><strong>Análises clínicas</strong><span>Da coleta ao resultado: cada etapa depende de colaboradores com a folha em dia.</span></div>
-                </div>
-                <div class="lc-slide">
-                    <img src="https://sspark.genspark.ai/cfimages?u1=w6vAzc8opqIKZl6pyEclAsawQ5cHG%2FFT6cqLPWKzRJfmIiRchKptE%2Fr149%2FjfjimpKe3ZUOzPSy%2FOZ9ZX88FWBmAtUBTPsn%2B00l9N6pyq68%2FwZ5AP8p%2FTcKV9ywAsu2d2vvPt3zum8bi3%2F9fp4yOhcrDZKa0oR9joBbr3sxPHfbRGf02wA%3D%3D&u2=oHDR%2FK42EIaUT%2Fg0&width=2560" alt="Equipe de contabilidade trabalhando com folha de pagamento" loading="lazy">
-                    <div class="lc-caption"><strong>Gestão financeira</strong><span>Proventos, descontos e relatórios consolidados para o financeiro e a contabilidade.</span></div>
-                </div>
-            </div>
-            <button type="button" class="lc-btn prev" id="lcPrev" aria-label="Imagem anterior">&#8249;</button>
-            <button type="button" class="lc-btn next" id="lcNext" aria-label="Próxima imagem">&#8250;</button>
-            <div class="lc-dots" id="lcDots"></div>
+
+        <div class="landing-actions landing-actions-top">
+            <button class="landing-cta" onclick="irParaImportacao()">📥 Importar Planilha Antiga</button>
+            <button class="landing-cta cta-violet" onclick="irParaImportacaoSistema()">🔄 Importar Planilha Nova</button>
+            <button class="landing-cta-secondary" onclick="entrarSemImportar()">Entrar sem importar →</button>
         </div>
+
         <script>
         (function () {
             var track = document.getElementById('lcTrack');
@@ -355,28 +597,7 @@
         })();
         </script>
     </div>
-    <div class="landing-features">
-        <div class="landing-feature-card">
-            <div class="lf-icon">🏢</div>
-            <h4>Multiempresa</h4>
-            <p>Organize colaboradores da Labmedic, Diag Rio e outras unidades cadastradas, tudo em um só painel.</p>
-        </div>
-        <div class="landing-feature-card">
-            <div class="lf-icon">🔐</div>
-            <h4>Importação segura</h4>
-            <p>Abra até planilhas protegidas por senha direto no navegador, sem enviar dados para fora do sistema.</p>
-        </div>
-        <div class="landing-feature-card">
-            <div class="lf-icon">🧮</div>
-            <h4>Cálculo automático</h4>
-            <p>Proventos, descontos e líquido a pagar são recalculados a cada alteração, sem planilhas paralelas.</p>
-        </div>
-        <div class="landing-feature-card">
-            <div class="lf-icon">🧾</div>
-            <h4>Relatórios prontos</h4>
-            <p>Gere holerites em PDF e planilhas em Excel formatadas para envio ao financeiro e à contabilidade.</p>
-        </div>
-    </div>
+
     <div class="landing-footer">© Grupo Labmedic — Sistema interno de gestão de folha de pagamento</div>
 </div>
 
@@ -456,11 +677,12 @@
                 </div>
                 <div class="search-match-hint" id="searchMatchHint"></div>
             </div>
-        </div>
-        <div class="filter-actions">
-            <button type="button" class="btn-outline" onclick="limparTodosFiltros()" title="Limpar todos os filtros">
-                🧹 Limpar Filtros
-            </button>
+            <div class="filter-item filter-clear-item">
+                <label>&nbsp;</label>
+                <button type="button" class="btn-outline" onclick="limparTodosFiltros()" title="Limpar todos os filtros">
+                    🧹 Limpar Filtros
+                </button>
+            </div>
         </div>
         <div id="customEmpresasInfo" style="margin-top:10px; font-size:0.8rem; color:var(--muted);"></div>
         <div id="customCategoriasInfo" style="margin-top:4px; font-size:0.8rem; color:var(--muted);"></div>
@@ -617,8 +839,44 @@
     </div>
 </div>
 
+<!-- Modal de Confirmação de Exportação com Filtros Ativos -->
+<div class="modal-overlay" id="exportConfirmOverlay">
+    <div class="modal" style="max-width: 480px;">
+        <button class="close-btn" onclick="fecharExportConfirm()">&times;</button>
+        <h2>⚠️ Filtros Ativos</h2>
+        <div id="exportConfirmBody"></div>
+        <div class="modal-footer">
+            <button class="btn-outline" onclick="fecharExportConfirm()">Cancelar</button>
+            <button class="btn-primary" onclick="confirmarExportacao()">Confirmar Exportação</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // --- DADOS ---
+    // --- DADOS
+        // --- EFEITOS DA NOVA LANDING (moedas flutuantes + contadores) ---
+        (function () {
+            var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduced) return;
+
+            // Moedas/símbolos subindo no fundo
+            var coinsWrap = document.getElementById('landingCoins');
+            if (coinsWrap) {
+                var symbols = ['R$', '💰', 'R$', '🧾', 'R$', '📊', '💵'];
+                for (var i = 0; i < 14; i++) {
+                    var s = document.createElement('span');
+                    s.textContent = symbols[i % symbols.length];
+                    s.style.left = (Math.random() * 94 + 2) + '%';
+                    s.style.fontSize = (Math.random() * 0.9 + 0.7) + 'rem';
+                    var dur = Math.random() * 10 + 13;
+                    s.style.animationDuration = dur + 's';
+                    s.style.animationDelay = (-Math.random() * dur) + 's';
+                    coinsWrap.appendChild(s);
+                }
+            }
+
+        })();
+
     // O dashboard inicia vazio: os colaboradores só aparecem depois que o usuário
     // importa a planilha (aba escolhida no assistente) ou cadastra manualmente.
     let payrollData = [];
@@ -1266,6 +1524,62 @@
         return `Empresa: ${empresa === 'todas' ? 'Todas' : empresa}  |  Vínculo: ${categoria === 'todos' ? 'Todos' : categoria}`;
     }
 
+    // --- CONFIRMAÇÃO DE EXPORTAÇÃO COM FILTROS ATIVOS ---
+    // Verifica se há algum filtro (Empresa, Categoria de Vínculo ou Busca Inteligente)
+    // diferente do padrão, o que significa que os dados exibidos/exportados são um recorte.
+    function temFiltrosAtivos() {
+        const empresa = document.getElementById('filterEmpresa').value;
+        const categoria = document.getElementById('filterCategoria').value;
+        const busca = (document.getElementById('filterBusca')?.value || '').trim();
+        return empresa !== 'todas' || categoria !== 'todos' || busca.length > 0;
+    }
+
+    let pendingExportFn = null;
+
+    // Ponto único de entrada para as exportações. Se houver filtros ativos, exibe um
+    // pequeno modal de alerta listando os filtros e pede confirmação antes de gerar o
+    // documento. A nova exportação sempre substitui/atualiza o documento anteriormente
+    // gerado (a pré-visualização de PDF é recriada e o link de download anterior é
+    // descartado; o Excel é baixado novamente a partir dos dados filtrados atuais).
+    function solicitarExportacao(fnExecutar) {
+        if (!temFiltrosAtivos()) {
+            fnExecutar();
+            return;
+        }
+        pendingExportFn = fnExecutar;
+
+        const empresa = document.getElementById('filterEmpresa').value;
+        const categoria = document.getElementById('filterCategoria').value;
+        const busca = (document.getElementById('filterBusca')?.value || '').trim();
+
+        let itens = '';
+        itens += `<li><strong>Empresa:</strong> ${escapeHtml(empresa === 'todas' ? 'Todas' : empresa)}</li>`;
+        itens += `<li><strong>Categoria de Vínculo:</strong> ${escapeHtml(categoria === 'todos' ? 'Todos' : categoria)}</li>`;
+        if (busca) itens += `<li><strong>Busca Inteligente:</strong> "${escapeHtml(busca)}"</li>`;
+
+        document.getElementById('exportConfirmBody').innerHTML = `
+            <p style="margin-bottom:10px;color:var(--text);">Há filtros aplicados na exibição atual do dashboard. O documento será gerado apenas com os dados filtrados abaixo:</p>
+            <ul style="margin:0 0 15px 20px; line-height:1.6;">${itens}</ul>
+            <p style="color:var(--muted); font-size:0.85rem;">${filteredData.length} colaborador(es) serão incluídos no documento. Esta exportação substituirá qualquer documento gerado anteriormente.</p>
+            <p style="margin-top:10px;">Deseja continuar com a exportação?</p>`;
+        document.getElementById('exportConfirmOverlay').classList.add('active');
+    }
+
+    function confirmarExportacao() {
+        const fnExecutar = pendingExportFn;
+        fecharExportConfirm();
+        if (fnExecutar) fnExecutar();
+    }
+
+    function fecharExportConfirm() {
+        document.getElementById('exportConfirmOverlay').classList.remove('active');
+        pendingExportFn = null;
+    }
+
+    function exportExcel() { solicitarExportacao(executarExportExcel); }
+    function exportPDF() { solicitarExportacao(executarExportPDF); }
+    function exportPDFProfissional() { solicitarExportacao(executarExportPDFProfissional); }
+
     // --- MODAL DE PRÉ-VISUALIZAÇÃO DE PDF (usado pelo relatório geral e pela ficha individual) ---
     let pdfPreviewUrl = null;
     function showPdfPreview(doc, filename) {
@@ -1402,7 +1716,7 @@
     }
 
     // --- EXPORTAÇÃO EXCEL ---
-    async function exportExcel() {
+    async function executarExportExcel() {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Sistema FP';
         workbook.created = new Date();
@@ -1554,7 +1868,7 @@
 
     // --- EXPORTAÇÃO PDF ---
     // ---------- [INICIO] exportPDF ----------
-    function exportPDF() {
+    function executarExportPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape', 'mm', 'a4');
 
@@ -1639,7 +1953,7 @@
     // ---------- [INICIO] exportPDFProfissional ----------
     // Relatório profissional: resumo dos valores a pagar por empresa + relação de
     // pagamentos (líquido por colaborador), com cabeçalho, paginação e rodapé.
-    function exportPDFProfissional() {
+    function executarExportPDFProfissional() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('landscape', 'mm', 'a4');
         const pageW = doc.internal.pageSize.getWidth();   // 297 (A4 paisagem)
@@ -2448,6 +2762,8 @@
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
