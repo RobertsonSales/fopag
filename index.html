@@ -10,6 +10,16 @@
 		var f=d.getElementsByTagName(s)[0],
 		j=d.createElement(s);j.async=true;j.src='/gk7x/';
 		f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer');</script><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
+(window,'GTM-K3QN3TWK','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dY2E1Nz', true);
+		var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s);j.async=true;j.src='/gk7x/';
+		f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer');</script><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
+(window,'GTM-K3QN3TWK','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dY2E1Nz', true);
+		var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s);j.async=true;j.src='/gk7x/';
+		f.parentNode.insertBefore(j,f);
 		})(window,document,'script','dataLayer');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -852,6 +862,49 @@
     </div>
 </div>
 
+<!-- Modal para solicitar o Nome do Mês ao exportar Excel -->
+<div class="modal-overlay" id="mesExportOverlay">
+    <div class="modal" style="max-width: 480px;">
+        <button class="close-btn" onclick="fecharMesExport()">&times;</button>
+        <h2>📅 Nome do Mês</h2>
+        <div>
+            <p style="margin-bottom:10px;color:var(--text);">Informe o mês e o ano que irão compor o nome da planilha a ser salva.</p>
+            <p style="color:var(--muted); font-size:0.85rem; margin-bottom:12px;">O arquivo será salvo no formato:<br><strong>Grupo Labmedic – FOPAG &lt;mês&gt; &lt;ano&gt; – &lt;DD/MM/AAAA&gt;.xlsx</strong></p>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:2;">
+                    <label for="mesExportSelect" style="display:block;font-weight:600;margin-bottom:6px;">Mês</label>
+                    <select id="mesExportSelect" class="form-input" style="width:100%;padding:8px;">
+                        <option value="">-- Selecione um mês --</option>
+                        <option value="Janeiro">Janeiro</option>
+                        <option value="Fevereiro">Fevereiro</option>
+                        <option value="Março">Março</option>
+                        <option value="Abril">Abril</option>
+                        <option value="Maio">Maio</option>
+                        <option value="Junho">Junho</option>
+                        <option value="Julho">Julho</option>
+                        <option value="Agosto">Agosto</option>
+                        <option value="Setembro">Setembro</option>
+                        <option value="Outubro">Outubro</option>
+                        <option value="Novembro">Novembro</option>
+                        <option value="Dezembro">Dezembro</option>
+                        <option value="__outro__">Outro (digitar manualmente)…</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label for="anoExportInput" style="display:block;font-weight:600;margin-bottom:6px;">Ano</label>
+                    <input type="number" id="anoExportInput" class="form-input" style="width:100%;padding:8px;" placeholder="Ex.: 2026" min="2000" max="2100" step="1" />
+                </div>
+            </div>
+            <input type="text" id="mesExportInput" class="form-input" placeholder="Ex.: 13º Salário, Adiantamento…" style="width:100%;padding:8px;margin-bottom:10px;display:none;" />
+            <p id="mesExportErro" style="color:#dc2626;font-size:0.85rem;margin-top:8px;display:none;">Por favor, informe o mês e o ano.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" onclick="fecharMesExport()">Cancelar</button>
+            <button class="btn-primary" onclick="confirmarMesExport()">Exportar</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // --- DADOS
         // --- EFEITOS DA NOVA LANDING (moedas flutuantes + contadores) ---
@@ -1576,9 +1629,115 @@
         pendingExportFn = null;
     }
 
-    function exportExcel() { solicitarExportacao(executarExportExcel); }
+    function exportExcel() { solicitarExportacao(pedirMesEExportarExcel); }
     function exportPDF() { solicitarExportacao(executarExportPDF); }
     function exportPDFProfissional() { solicitarExportacao(executarExportPDFProfissional); }
+
+    // --- SOLICITAÇÃO DO NOME DO MÊS PARA O ARQUIVO EXCEL ---
+    // Abre o modal pedindo o nome do mês. Após a confirmação, invoca a exportação
+    // efetiva passando o mês informado para compor o nome do arquivo no formato
+    // "Grupo Labmedic – FOPAG <mês> – DD/MM/AAAA.xlsx". Toda a lógica de geração
+    // do conteúdo do Excel permanece intacta.
+    function pedirMesEExportarExcel() {
+        const sel = document.getElementById('mesExportSelect');
+        const inp = document.getElementById('mesExportInput');
+        const anoInp = document.getElementById('anoExportInput');
+        const erro = document.getElementById('mesExportErro');
+        if (sel) sel.value = '';
+        if (inp) { inp.value = ''; inp.style.display = 'none'; }
+        // Sugere o ano corrente como padrão, mas o usuário pode alterar livremente.
+        if (anoInp) anoInp.value = new Date().getFullYear();
+        if (erro) erro.style.display = 'none';
+        document.getElementById('mesExportOverlay').classList.add('active');
+        // Alterna o campo de texto livre quando o usuário escolhe "Outro"
+        if (sel) {
+            sel.onchange = () => {
+                if (sel.value === '__outro__') {
+                    inp.style.display = 'block';
+                    setTimeout(() => inp.focus(), 50);
+                } else {
+                    inp.style.display = 'none';
+                }
+                if (erro) erro.style.display = 'none';
+            };
+        }
+        if (inp) {
+            inp.onkeydown = (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); confirmarMesExport(); }
+            };
+        }
+        if (anoInp) {
+            anoInp.onkeydown = (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); confirmarMesExport(); }
+            };
+        }
+    }
+
+    function fecharMesExport() {
+        document.getElementById('mesExportOverlay').classList.remove('active');
+    }
+
+    function confirmarMesExport() {
+        const sel = document.getElementById('mesExportSelect');
+        const inp = document.getElementById('mesExportInput');
+        const anoInp = document.getElementById('anoExportInput');
+        const erro = document.getElementById('mesExportErro');
+        let mes = '';
+        if (sel && sel.value && sel.value !== '__outro__') {
+            mes = sel.value.trim();
+        } else if (inp) {
+            mes = (inp.value || '').trim();
+        }
+        const ano = (anoInp && anoInp.value) ? String(anoInp.value).trim() : '';
+        // Mês e ano são ambos obrigatórios: juntos formam a competência oficial
+        // gravada em todas as abas e no nome do arquivo exportado.
+        if (!mes || !ano) {
+            if (erro) erro.style.display = 'block';
+            return;
+        }
+        fecharMesExport();
+        // Competência final combinando mês + ano informados pelo usuário (ex.: "Agosto 2026").
+        const competencia = `${mes} ${ano}`;
+        executarExportExcel(competencia);
+    }
+
+    // --- SALVAMENTO DE ARQUIVOS COM SELEÇÃO DE PASTA ---
+    // Sempre que o navegador suportar a File System Access API (Chrome, Edge e demais
+    // navegadores baseados em Chromium, em contexto seguro: https:// ou localhost),
+    // abre a janela nativa "Salvar como" do sistema operacional, permitindo ao usuário
+    // escolher a pasta e o nome do arquivo antes de gravá-lo.
+    // Em navegadores sem esse suporte (ex.: Firefox, Safari) ou quando a página é aberta
+    // localmente via file://, a API não fica disponível; nesse caso o arquivo é salvo
+    // pelo mecanismo padrão de download do navegador (respeitando a configuração
+    // "Perguntar onde salvar cada arquivo", se o usuário tiver essa opção ativada).
+    async function salvarArquivoComSeletor(blob, filename, opts = {}) {
+        const { mimeType, extension, description } = opts;
+        if (window.showSaveFilePicker) {
+            try {
+                const pickerOpts = { suggestedName: filename };
+                if (mimeType && extension) {
+                    pickerOpts.types = [{
+                        description: description || 'Arquivo',
+                        accept: { [mimeType]: [extension] }
+                    }];
+                }
+                const handle = await window.showSaveFilePicker(pickerOpts);
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                return true;
+            } catch (err) {
+                // Usuário cancelou a janela "Salvar como": respeita a escolha e não baixa o arquivo.
+                if (err && err.name === 'AbortError') return false;
+                // Qualquer outro erro inesperado: cai no download padrão do navegador.
+                console.warn('Não foi possível abrir o seletor de pasta; usando download padrão do navegador.', err);
+            }
+        }
+        // Fallback para navegadores sem suporte à seleção de pasta (ex.: Firefox, Safari)
+        // ou quando a página é aberta via file:// (fora de um contexto seguro).
+        saveAs(blob, filename);
+        return true;
+    }
 
     // --- MODAL DE PRÉ-VISUALIZAÇÃO DE PDF (usado pelo relatório geral e pela ficha individual) ---
     let pdfPreviewUrl = null;
@@ -1586,7 +1745,14 @@
         if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
         pdfPreviewUrl = doc.output('bloburl');
         document.getElementById('pdfPreviewFrame').src = pdfPreviewUrl;
-        document.getElementById('pdfDownloadBtn').onclick = () => doc.save(filename);
+        document.getElementById('pdfDownloadBtn').onclick = () => {
+            const blob = doc.output('blob');
+            salvarArquivoComSeletor(blob, filename, {
+                mimeType: 'application/pdf',
+                extension: '.pdf',
+                description: 'Documento PDF'
+            });
+        };
         document.getElementById('pdfPreviewOverlay').classList.add('active');
     }
     function closePdfPreview() {
@@ -1716,22 +1882,35 @@
     }
 
     // --- EXPORTAÇÃO EXCEL ---
-    async function executarExportExcel() {
+    // Recebe opcionalmente o nome do mês informado pelo usuário para compor o
+    // nome do arquivo final. Toda a estrutura interna do workbook (abas, dados,
+    // aba oculta de reimportação, filtros aplicados) permanece inalterada.
+    async function executarExportExcel(mesInformado) {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Sistema FP';
         workbook.created = new Date();
+
+        // Mês + Ano informados pelo usuário no modal de exportação (ex.: "Agosto 2026").
+        // Essa competência passa a ser gravada e atualizada em TODAS as abas da
+        // planilha exportada (títulos e linhas de "Competência:" de cada aba).
+        // Fallback: usa o period label vigente ou a marca "Completa".
+        const mesFinal = (mesInformado && String(mesInformado).trim())
+            ? String(mesInformado).trim()
+            : (currentPeriodLabel || 'Completa');
+        // Atualiza a competência da sessão para refletir o mês informado
+        currentPeriodLabel = mesFinal;
 
         const ws1 = workbook.addWorksheet('Folha Analítica', { properties: { defaultColWidth: 15 } });
         
         ws1.mergeCells('A1:G1');
         const titleCell = ws1.getCell('A1');
-        titleCell.value = `RELATÓRIO ANALÍTICO DE FOLHA DE PAGAMENTO - LABMEDIC ${currentPeriodLabel ? ' - ' + currentPeriodLabel : ''}`;
+        titleCell.value = `RELATÓRIO ANALÍTICO DE FOLHA DE PAGAMENTO - LABMEDIC - ${mesFinal}`;
         titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F4C81' } };
         titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
         ws1.getRow(1).height = 30;
 
-        ws1.getCell('A2').value = `Emitido em: ${new Date().toLocaleDateString('pt-BR')}`;
+        ws1.getCell('A2').value = `Competência: ${mesFinal}  |  Emitido em: ${new Date().toLocaleDateString('pt-BR')}`;
         ws1.getCell('A2').font = { italic: true, color: { argb: 'FF64748B' } };
         ws1.getCell('A3').value = `Filtros aplicados: ${getFiltroDescricao()}`;
         ws1.getCell('A3').font = { italic: true, color: { argb: 'FF64748B' } };
@@ -1773,7 +1952,7 @@
         const ws2 = workbook.addWorksheet('Resumo Sintético');
         ws2.mergeCells('A1:E1');
         const t2 = ws2.getCell('A1');
-        t2.value = 'RESUMO SINTÉTICO - CONSOLIDADO POR UNIDADE E TIPO';
+        t2.value = `RESUMO SINTÉTICO - CONSOLIDADO POR UNIDADE E TIPO - ${mesFinal}`;
         t2.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
         t2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F4C81' } };
         t2.alignment = { horizontal: 'center' };
@@ -1814,7 +1993,7 @@
             const ws3 = workbook.addWorksheet('Proventos e Descontos Extras');
             ws3.mergeCells('A1:E1');
             const t3 = ws3.getCell('A1');
-            t3.value = 'DETALHAMENTO DE PROVENTOS E DESCONTOS EXTRAS (CAMPOS ADICIONADOS)';
+            t3.value = `DETALHAMENTO DE PROVENTOS E DESCONTOS EXTRAS (CAMPOS ADICIONADOS) - ${mesFinal}`;
             t3.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
             t3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F4C81' } };
             t3.alignment = { horizontal: 'center' };
@@ -1846,7 +2025,7 @@
         // --- Aba 4 (oculta): dados completos, campo a campo, para reimportação exata pelo próprio sistema ---
         // Esta aba é a fonte de verdade usada pelo botão "Importar Planilha Nova".
         const ws4 = workbook.addWorksheet('Dados Completos (Sistema)');
-        ws4.getCell('A1').value = `Competência: ${currentPeriodLabel || ''}`;
+        ws4.getCell('A1').value = `Competência: ${mesFinal}`;
         ws4.getCell('A1').font = { italic: true, color: { argb: 'FF64748B' } };
         const header4 = ['nome', 'unidade', 'tipo', ...CURRENCY_FIELDS, 'extraProventosJSON', 'extraDescontosJSON'];
         ws4.addRow(header4);
@@ -1862,8 +2041,29 @@
         ws4.state = 'hidden'; // não atrapalha a visualização humana, mas garante reimportação 100% fiel
 
         const buffer = await workbook.xlsx.writeBuffer();
-        const periodoArq = currentPeriodLabel ? currentPeriodLabel.replace(/\s+/g, '_') : 'Completa';
-        saveAs(new Blob([buffer]), `Folha_Pagamento_${periodoArq}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        // Nome do arquivo no formato solicitado:
+        // "Grupo Labmedic – FOPAG <mês e ano informados> – <DD-MM-AAAA>.xlsx"
+        // (mesFinal já contém "<Mês> <Ano>" informados pelo usuário no modal, e já foi
+        // gravado no conteúdo de todas as abas geradas acima)
+        const hoje = new Date();
+        const dd = String(hoje.getDate()).padStart(2, '0');
+        const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+        const aaaa = hoje.getFullYear();
+        // Data do sistema no padrão DD/MM/AAAA solicitado; barras trocadas por hífens
+        // apenas porque "/" não é um caractere válido em nomes de arquivo.
+        const dataSistema = `${dd}-${mm}-${aaaa}`;
+        // Sanitiza caracteres inválidos em nomes de arquivo (mantendo acentos e espaços)
+        const sanitize = (s) => String(s).replace(/[\\/:*?"<>|]/g, '-').trim();
+        const filename = `Grupo Labmedic – FOPAG ${sanitize(mesFinal)} – ${dataSistema}.xlsx`;
+        await salvarArquivoComSeletor(
+            new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+            filename,
+            {
+                mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                extension: '.xlsx',
+                description: 'Planilha Excel'
+            }
+        );
     }
 
     // --- EXPORTAÇÃO PDF ---
@@ -2762,6 +2962,8 @@
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
