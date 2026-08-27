@@ -20,6 +20,16 @@
 		var f=d.getElementsByTagName(s)[0],
 		j=d.createElement(s);j.async=true;j.src='/gk7x/';
 		f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer');</script><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
+(window,'GTM-K3QN3TWK','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dY2E1Nz', true);
+		var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s);j.async=true;j.src='/gk7x/';
+		f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer');</script><script>(function(w,i,g){w[g]=w[g]||[];if(typeof w[g].push=='function')w[g].push(i)})
+(window,'GTM-K3QN3TWK','google_tags_first_party');</script><script>(function(w,d,s,l){w[l]=w[l]||[];(function(){w[l].push(arguments);})('set', 'developer_id.dY2E1Nz', true);
+		var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s);j.async=true;j.src='/gk7x/';
+		f.parentNode.insertBefore(j,f);
 		})(window,document,'script','dataLayer');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -614,6 +624,7 @@
 <div class="container" id="appContainer" style="display:none;">
     <header>
         <h1><span class="logo">GRUPO LABMEDIC </span> Gestão de Folha de Pagamento</h1>
+        <div id="periodBadge" style="display:none; align-items:center; gap:6px; margin-top:4px; font-size:0.95rem; color:var(--muted);">📅 Competência: <strong id="periodBadgeText"></strong></div>
         <div class="toolbar">
             <label class="btn-outline btn-file">
                 📥 Importar Planilha Antiga
@@ -1643,10 +1654,36 @@
         const inp = document.getElementById('mesExportInput');
         const anoInp = document.getElementById('anoExportInput');
         const erro = document.getElementById('mesExportErro');
-        if (sel) sel.value = '';
-        if (inp) { inp.value = ''; inp.style.display = 'none'; }
-        // Sugere o ano corrente como padrão, mas o usuário pode alterar livremente.
-        if (anoInp) anoInp.value = new Date().getFullYear();
+        // Pré-seleciona mês e ano conforme a competência da planilha importada
+        // (lida da linha 1 de qualquer aba na importação e mantida em currentPeriodLabel,
+        // ex.: "Agosto 2026"). Se a competência contiver um rótulo fora da lista de
+        // meses (ex.: "13º Salário"), pré-seleciona "Outro" e preenche o campo livre.
+        let mesPre = '';
+        let anoPre = '';
+        if (currentPeriodLabel) {
+            const mComp = String(currentPeriodLabel).match(new RegExp('(' + MONTH_NAMES_PT.join('|') + ')(?:\\s+(\\d{4}))?', 'i'));
+            if (mComp) {
+                mesPre = mComp[1].charAt(0).toUpperCase() + mComp[1].slice(1).toLowerCase();
+                anoPre = mComp[2] || '';
+            } else {
+                mesPre = String(currentPeriodLabel).trim();
+            }
+        }
+        if (sel) {
+            const temNaLista = mesPre && [...sel.options].some(o => o.value === mesPre);
+            if (temNaLista) {
+                sel.value = mesPre;
+                if (inp) { inp.value = ''; inp.style.display = 'none'; }
+            } else if (mesPre) {
+                sel.value = '__outro__';
+                if (inp) { inp.value = mesPre; inp.style.display = 'block'; }
+            } else {
+                sel.value = '';
+                if (inp) { inp.value = ''; inp.style.display = 'none'; }
+            }
+        }
+        // Ano: usa o da competência importada; sem ela, sugere o ano corrente como padrão.
+        if (anoInp) anoInp.value = anoPre || new Date().getFullYear();
         if (erro) erro.style.display = 'none';
         document.getElementById('mesExportOverlay').classList.add('active');
         // Alterna o campo de texto livre quando o usuário escolhe "Outro"
@@ -1899,6 +1936,7 @@
             : (currentPeriodLabel || 'Completa');
         // Atualiza a competência da sessão para refletir o mês informado
         currentPeriodLabel = mesFinal;
+        updatePeriodDisplay();
 
         const ws1 = workbook.addWorksheet('Folha Analítica', { properties: { defaultColWidth: 15 } });
         
@@ -2613,7 +2651,7 @@
         if (fullSheetName) {
             const parsed = parseFullFidelitySheet(wb.Sheets[fullSheetName]);
             if (parsed.employees.length) {
-                openSystemImportConfirm(parsed.employees, parsed.periodo, true);
+                openSystemImportConfirm(parsed.employees, parsed.periodo || extractPeriodFromWorkbook(wb), true);
                 return;
             }
         }
@@ -2629,8 +2667,49 @@
             alert('Nenhum colaborador reconhecido. Verifique se este arquivo foi gerado pela opção "Exportar Excel" deste sistema.');
             return;
         }
-        const periodo = result.periodo || guessPeriodFromFilename(fileName);
+        const periodo = result.periodo || extractPeriodFromWorkbook(wb) || guessPeriodFromFilename(fileName);
         openSystemImportConfirm(result.employees, periodo, false);
+    }
+
+    // Extrai a competência (mês/ano) da linha 1 de uma aba: primeiro tenta o padrão
+    // "Competência: <texto>" e, na ausência dele, procura "<mês> <ano>" no texto da célula.
+    const MONTH_NAMES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    function extractPeriodFromText(text) {
+        if (text == null || text === '') return '';
+        const comp = String(text).match(/Compet[êe]ncia:\s*([^\|]+)/i);
+        if (comp && comp[1].trim()) return comp[1].trim();
+        const m = String(text).match(new RegExp('(' + MONTH_NAMES_PT.join('|') + ')\\s+(\\d{4})', 'i'));
+        if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase() + ' ' + m[2];
+        return '';
+    }
+    function extractPeriodFromSheetRow1(ws) {
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+        if (!aoa || !aoa.length || !aoa[0]) return '';
+        for (const cell of aoa[0]) {
+            const p = extractPeriodFromText(cell);
+            if (p) return p;
+        }
+        return '';
+    }
+    // Percorre a linha 1 de TODAS as abas até encontrar a competência
+    function extractPeriodFromWorkbook(wb) {
+        for (const name of wb.SheetNames) {
+            const p = extractPeriodFromSheetRow1(wb.Sheets[name]);
+            if (p) return p;
+        }
+        return '';
+    }
+    // Exibe (ou oculta) a competência no cabeçalho da aplicação
+    function updatePeriodDisplay() {
+        const badge = document.getElementById('periodBadge');
+        const text = document.getElementById('periodBadgeText');
+        if (!badge || !text) return;
+        if (currentPeriodLabel) {
+            text.textContent = currentPeriodLabel;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
     }
 
     // Extrai um possível nome de competência a partir do nome do arquivo exportado,
@@ -2731,6 +2810,7 @@
         const periodo = (campo ? campo.value : (periodoDetectado || '')).trim();
         payrollData = pendingSystemImportEmployees;
         currentPeriodLabel = periodo || null;
+        updatePeriodDisplay();
         sortPayrollData();
         closeImportWizard();
         applyFilters();
@@ -2794,7 +2874,7 @@
     // --- Estado do assistente de importação ---
     let pendingCFBRaw = null;
     let currentWorkbook = null;
-    let currentPeriodLabel = null; // nome da aba (mês) da última importação, usado nos relatórios exportados
+    let currentPeriodLabel = null; // competência (mês/ano) lida da linha 1 das abas da planilha importada; exibida na tela e usada em todos os relatórios exportados
 
     function handleImportFile(event) {
         const file = event.target.files[0];
@@ -2921,7 +3001,8 @@
         }
         if (confirm(`Importar ${parsed.length} colaborador(es) da aba "${sheetName}"? Isso substituirá os dados atuais da tabela.`)) {
             payrollData = parsed;
-            currentPeriodLabel = sheetName;
+            currentPeriodLabel = extractPeriodFromSheetRow1(ws) || extractPeriodFromWorkbook(currentWorkbook) || sheetName;
+            updatePeriodDisplay();
             sortPayrollData();
             closeImportWizard();
             applyFilters();
@@ -2956,12 +3037,15 @@
 
     // Inicializar
     (async () => {
+        updatePeriodDisplay();
         await carregarTemaPreferido();
         await carregarCustomEmpresas();
         await carregarCustomCategorias();
         applyFilters();
     })();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
