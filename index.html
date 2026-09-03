@@ -161,6 +161,77 @@
         .smart-search-wrap.has-value .clear-btn { display: inline-flex; }
         .search-match-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; font-style: italic; }
 
+        /* --- Cabeçalho da Listagem (com botão Recibo Unificado quando vínculo = COMISSÕES) --- */
+        .list-header {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .list-header .lh-title {
+            font-size: 1rem; font-weight: 700; color: var(--primary);
+            display: flex; align-items: center; gap: 8px; letter-spacing: 0.2px;
+        }
+        .list-header .lh-title .lh-count {
+            font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+            background: var(--primary-light); color: var(--primary); letter-spacing: 0.3px;
+        }
+        .btn-recibo-unificado {
+            background: linear-gradient(135deg, #0f4c81 0%, #1d6fb8 100%);
+            color: #fff; border: none; padding: 9px 16px; border-radius: 8px;
+            font-weight: 700; font-size: 0.88rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 12px -3px rgba(15,76,129,0.45);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+        .btn-recibo-unificado:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -4px rgba(15,76,129,0.55); filter: brightness(1.05); }
+        .btn-recibo-unificado:active { transform: translateY(0); }
+
+        /* --- Modal do Recibo Unificado (busca inteligente de vendedor) --- */
+        .ru-search-wrap { position: relative; margin-top: 6px; }
+        .ru-search-wrap .ru-search-icon {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--muted); font-size: 1rem; pointer-events: none;
+        }
+        #reciboUnifBusca {
+            width: 100%; padding: 12px 40px 12px 38px;
+            border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.95rem; background: var(--card); color: var(--text);
+        }
+        #reciboUnifBusca:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+        .ru-clear-btn {
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            background: transparent; border: none; color: var(--muted); cursor: pointer;
+            font-size: 1rem; padding: 4px 8px; border-radius: 4px; display: none;
+        }
+        .ru-clear-btn:hover { background: var(--bg); color: var(--text); }
+        .ru-search-wrap.has-value .ru-clear-btn { display: inline-flex; }
+
+        .ru-results {
+            margin-top: 12px; max-height: 320px; overflow-y: auto;
+            border: 1px solid var(--border); border-radius: 8px; background: var(--card);
+        }
+        .ru-result-item {
+            padding: 12px 14px; border-bottom: 1px solid var(--border);
+            cursor: pointer; transition: background 0.15s;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        }
+        .ru-result-item:last-child { border-bottom: none; }
+        .ru-result-item:hover { background: var(--row-hover); }
+        .ru-result-item.selected { background: var(--primary-light); }
+        .ru-result-item .ru-nome { font-weight: 700; color: var(--text); font-size: 0.95rem; }
+        .ru-result-item .ru-empresas {
+            font-size: 0.78rem; color: var(--muted); margin-top: 3px;
+            display: flex; flex-wrap: wrap; gap: 4px;
+        }
+        .ru-result-item .ru-empresas .badge { font-size: 0.68rem; padding: 2px 8px; }
+        .ru-result-item .ru-liquido {
+            font-weight: 700; color: var(--success); font-size: 0.95rem; white-space: nowrap;
+        }
+        .ru-empty {
+            padding: 30px 20px; text-align: center; color: var(--muted); font-size: 0.9rem;
+        }
+        .ru-hint { font-size: 0.8rem; color: var(--muted); margin-top: 8px; font-style: italic; }
+
         .card { background: var(--card); border-radius: 8px; box-shadow: 0 4px 6px -1px var(--shadow-color); padding: 20px; margin-bottom: 20px; overflow-x: auto;}
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -710,6 +781,17 @@
     </div>
 
     <div class="card">
+        <div class="list-header" id="listHeader">
+            <div class="lh-title">
+                📋 Listagem de Colaboradores
+                <span class="lh-count" id="lhCount">0</span>
+            </div>
+            <div id="listHeaderActions" style="display:flex; gap:8px; align-items:center;">
+                <button type="button" id="btnReciboUnificado" class="btn-recibo-unificado" style="display:none;" onclick="openReciboUnificadoModal()" title="Gerar recibo único de um vendedor consolidando todas as empresas em que atua">
+                    🧾 Recibo Unificado
+                </button>
+            </div>
+        </div>
         <table id="mainTable">
             <thead>
                 <tr>
@@ -856,6 +938,29 @@
         <div class="modal-footer" style="flex-shrink:0;">
             <button class="btn-outline" onclick="closePdfPreview()">Fechar</button>
             <button class="btn-success" id="pdfDownloadBtn">📥 Baixar PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal do Recibo Unificado (seleção de vendedor com busca inteligente) -->
+<div class="modal-overlay" id="reciboUnifOverlay">
+    <div class="modal" style="max-width: 640px;">
+        <button class="close-btn" onclick="closeReciboUnificadoModal()">&times;</button>
+        <h2>🧾 Recibo Unificado — Selecionar Vendedor</h2>
+        <p style="color:var(--muted); font-size:0.9rem; margin-bottom:6px;">
+            Selecione um vendedor para gerar um recibo único consolidando todos os vínculos (empresas) em que ele atua sob a categoria <strong>COMISSÕES</strong>.
+        </p>
+        <div class="ru-search-wrap" id="reciboUnifSearchWrap">
+            <span class="ru-search-icon">🔎</span>
+            <input type="text" id="reciboUnifBusca" autocomplete="off"
+                placeholder="Buscar vendedor por nome..."
+                oninput="handleReciboUnifBuscaInput()">
+            <button type="button" class="ru-clear-btn" onclick="limparReciboUnifBusca()" title="Limpar busca">✕</button>
+        </div>
+        <div class="ru-hint" id="reciboUnifHint"></div>
+        <div class="ru-results" id="reciboUnifResults"></div>
+        <div class="modal-footer">
+            <button class="btn-outline" onclick="closeReciboUnificadoModal()">Cancelar</button>
         </div>
     </div>
 </div>
@@ -1413,6 +1518,29 @@
         updateCards();
     }
 
+    // --- CABEÇALHO DA LISTAGEM: botão "Recibo Unificado" aparece somente com vínculo COMISSÕES ---
+    // Comparação case-insensitive e sem acentos, para tolerar variações de cadastro
+    // ("COMISSÕES", "Comissões", "Comissoes", "COMISSAO" etc.) — assim o botão aparece
+    // sempre que o filtro estiver posicionado nesse vínculo, mesmo com pequenas
+    // diferenças na grafia entre importações da planilha.
+    function isVinculoComissoes(valor) {
+        const n = normalizarTexto(valor);
+        return n === 'comissoes' || n === 'comissao';
+    }
+
+    function atualizarBotaoReciboUnificado() {
+        const btn = document.getElementById('btnReciboUnificado');
+        if (!btn) return;
+        const categoria = document.getElementById('filterCategoria').value;
+        btn.style.display = isVinculoComissoes(categoria) ? 'inline-flex' : 'none';
+    }
+
+    function atualizarContagemListagem() {
+        const el = document.getElementById('lhCount');
+        if (!el) return;
+        el.textContent = `${filteredData.length} colaborador(es)`;
+    }
+
     // --- ATUALIZAR CARDS ---
     function updateCards() {
         let totais = { prov: 0, desc: 0, liq: 0 };
@@ -1427,6 +1555,10 @@
         document.getElementById('cardProv').textContent = formatBRL(totais.prov);
         document.getElementById('cardDesc').textContent = formatBRL(totais.desc);
         document.getElementById('cardLiq').textContent = formatBRL(totais.liq);
+
+        // Atualiza também os elementos vinculados ao cabeçalho da listagem
+        atualizarContagemListagem();
+        atualizarBotaoReciboUnificado();
     }
 
     // --- RENDERIZAÇÃO ---
@@ -1855,6 +1987,248 @@
         document.getElementById('detailModalOverlay').classList.add('active');
     }
     function closeDetailModal() { document.getElementById('detailModalOverlay').classList.remove('active'); }
+
+    // ==================================================================================
+    // --- RECIBO UNIFICADO (vínculo COMISSÕES) ---
+    // Consolida, num único recibo, todos os registros de um mesmo vendedor — potencialmente
+    // vinculado a mais de uma empresa dentro da categoria COMISSÕES — somando proventos,
+    // descontos e campos extras. Reaproveita rigorosamente o mesmo layout do modal de
+    // detalhes de um colaborador e do PDF gerado pela lupa ("exportEmployeePDF"), inclusive
+    // com cabeçalho, cores, cores das colunas e resumo final.
+    // ==================================================================================
+
+    // Agrupa colaboradores do vínculo COMISSÕES por nome (case/acento-insensível),
+    // preservando referença a todos os registros originais para exibição de suas empresas.
+    function obterVendedoresComissoes() {
+        const mapa = new Map();
+        payrollData.forEach((emp) => {
+            if (!isVinculoComissoes(emp.tipo)) return;
+            const nomeExib = (emp.nome || '').trim();
+            if (!nomeExib) return;
+            const chave = normalizarTexto(nomeExib);
+            if (!mapa.has(chave)) {
+                mapa.set(chave, { nomeExib, registros: [] });
+            }
+            mapa.get(chave).registros.push(emp);
+        });
+        // Ordena alfabeticamente
+        return Array.from(mapa.values()).sort((a, b) =>
+            a.nomeExib.localeCompare(b.nomeExib, 'pt-BR', { sensitivity: 'base' })
+        );
+    }
+
+    // Soma dois objetos de colaborador (todos os CURRENCY_FIELDS) preservando extras.
+    // Extras são concatenados com o nome da empresa entre parênteses, para identificação
+    // clara no recibo consolidado (ex.: "Bônus Comercial (Labmedic)").
+    function agregarVendedor(vendedor) {
+        const agregado = {
+            nome: vendedor.nomeExib,
+            tipo: 'COMISSÕES',
+            unidade: '', // definido logo abaixo
+            extraProventos: [],
+            extraDescontos: []
+        };
+        CURRENCY_FIELDS.forEach(f => { agregado[f] = 0; });
+
+        const unidades = [];
+        vendedor.registros.forEach(emp => {
+            const un = (emp.unidade || '').trim();
+            if (un && !unidades.some(u => u.toLowerCase() === un.toLowerCase())) unidades.push(un);
+
+            CURRENCY_FIELDS.forEach(f => {
+                agregado[f] = (agregado[f] || 0) + (Number(emp[f]) || 0);
+            });
+            (emp.extraProventos || []).forEach(item => {
+                agregado.extraProventos.push({
+                    label: un ? `${item.label} (${un})` : item.label,
+                    valor: Number(item.valor) || 0
+                });
+            });
+            (emp.extraDescontos || []).forEach(item => {
+                agregado.extraDescontos.push({
+                    label: un ? `${item.label} (${un})` : item.label,
+                    valor: Number(item.valor) || 0
+                });
+            });
+        });
+
+        agregado.unidade = unidades.join(' + ') || '—';
+        agregado._unidadesLista = unidades;
+        return agregado;
+    }
+
+    // Abre o modal de seleção de vendedor
+    function openReciboUnificadoModal() {
+        const overlay = document.getElementById('reciboUnifOverlay');
+        const input = document.getElementById('reciboUnifBusca');
+        const wrap = document.getElementById('reciboUnifSearchWrap');
+        if (input) input.value = '';
+        if (wrap) wrap.classList.remove('has-value');
+        renderReciboUnifResults('');
+        overlay.classList.add('active');
+        // Foco na busca para agilizar a interação
+        setTimeout(() => { if (input) input.focus(); }, 80);
+    }
+
+    function closeReciboUnificadoModal() {
+        document.getElementById('reciboUnifOverlay').classList.remove('active');
+    }
+
+    function limparReciboUnifBusca() {
+        const input = document.getElementById('reciboUnifBusca');
+        const wrap = document.getElementById('reciboUnifSearchWrap');
+        if (input) input.value = '';
+        if (wrap) wrap.classList.remove('has-value');
+        renderReciboUnifResults('');
+        if (input) input.focus();
+    }
+
+    function handleReciboUnifBuscaInput() {
+        const input = document.getElementById('reciboUnifBusca');
+        const wrap = document.getElementById('reciboUnifSearchWrap');
+        if (!input) return;
+        if (input.value.trim()) wrap.classList.add('has-value');
+        else wrap.classList.remove('has-value');
+        renderReciboUnifResults(input.value);
+    }
+
+    // Renderiza a lista de vendedores filtrados pela busca. Cada item mostra o nome do
+    // vendedor, os vínculos com empresas (badges) e o líquido consolidado. Clicar no
+    // item dispara diretamente a geração do PDF unificado.
+    function renderReciboUnifResults(termoRaw) {
+        const container = document.getElementById('reciboUnifResults');
+        const hint = document.getElementById('reciboUnifHint');
+        if (!container) return;
+
+        const vendedores = obterVendedoresComissoes();
+
+        if (vendedores.length === 0) {
+            container.innerHTML = `<div class="ru-empty">Nenhum colaborador com vínculo <strong>COMISSÕES</strong> foi encontrado nos dados atuais.</div>`;
+            if (hint) hint.textContent = '';
+            return;
+        }
+
+        const termos = normalizarTexto(termoRaw).split(/\s+/).filter(t => t.length > 0);
+        const filtrados = vendedores.filter(v => {
+            if (termos.length === 0) return true;
+            const campos = [
+                normalizarTexto(v.nomeExib),
+                ...v.registros.map(r => normalizarTexto(r.unidade))
+            ];
+            return termos.every(t => campos.some(c => c && c.includes(t)));
+        });
+
+        if (hint) {
+            if (termos.length === 0) {
+                hint.textContent = `${vendedores.length} vendedor(es) disponível(is).`;
+            } else if (filtrados.length === 0) {
+                hint.textContent = `Nenhum vendedor corresponde a "${termoRaw.trim()}".`;
+            } else {
+                hint.textContent = `${filtrados.length} resultado(s) para "${termoRaw.trim()}".`;
+            }
+        }
+
+        if (filtrados.length === 0) {
+            container.innerHTML = `<div class="ru-empty">Sem vendedores para os termos informados.</div>`;
+            return;
+        }
+
+        container.innerHTML = filtrados.map((v, idx) => {
+            const agregado = agregarVendedor(v);
+            const c = calcEmp(agregado);
+            const badges = v.registros.map(r => {
+                const cls = badgeParaUnidade(r.unidade);
+                return `<span class="badge ${cls}">${escapeHtml(r.unidade || '—')}</span>`;
+            }).join('');
+            return `
+                <div class="ru-result-item" data-idx="${idx}" onclick="gerarReciboUnificadoPorNome('${encodeURIComponent(v.nomeExib)}')">
+                    <div style="min-width:0; flex:1;">
+                        <div class="ru-nome">${escapeHtml(v.nomeExib)}</div>
+                        <div class="ru-empresas">${badges}</div>
+                    </div>
+                    <div class="ru-liquido" title="Líquido consolidado">${formatBRL(c.liq)}</div>
+                </div>`;
+        }).join('');
+    }
+
+    // Dispara a geração do recibo unificado a partir do nome do vendedor selecionado.
+    function gerarReciboUnificadoPorNome(nomeEncoded) {
+        const nome = decodeURIComponent(nomeEncoded);
+        const vendedores = obterVendedoresComissoes();
+        const alvo = vendedores.find(v => v.nomeExib === nome) ||
+                     vendedores.find(v => normalizarTexto(v.nomeExib) === normalizarTexto(nome));
+        if (!alvo) {
+            alert('Não foi possível localizar o vendedor selecionado.');
+            return;
+        }
+        const agregado = agregarVendedor(alvo);
+        closeReciboUnificadoModal();
+        exportReciboUnificadoPDF(agregado);
+    }
+
+    // Gera o PDF do recibo unificado seguindo EXATAMENTE o mesmo layout, cores,
+    // fontes, tabelas e resumo final do PDF individual (exportEmployeePDF). A
+    // diferença essencial é o subtítulo, que mostra todas as empresas em que o
+    // vendedor atua (ex.: "Labmedic + Diag Rio"), e o título da faixa superior,
+    // que passa a ser "RECIBO UNIFICADO DE PAGAMENTO".
+    function exportReciboUnificadoPDF(emp) {
+        const c = calcEmp(emp);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('portrait', 'mm', 'a4');
+
+        doc.setFillColor(15, 76, 129);
+        doc.rect(0, 0, 210, 25, 'F');
+        doc.setFontSize(16); doc.setTextColor(255, 255, 255);
+        doc.text('RECIBO UNIFICADO DE PAGAMENTO', 14, 12);
+        doc.setFontSize(10);
+        doc.text(`${emp.unidade}${currentPeriodLabel ? ' - ' + currentPeriodLabel : ''}`, 14, 19);
+
+        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(13);
+        doc.text(emp.nome, 14, 35);
+        doc.setFontSize(9); doc.setTextColor(100);
+        doc.text(`Vínculo: ${emp.tipo}   |   Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 41);
+
+        const proventos = LABELS_PROVENTOS.filter(([k]) => emp[k]).map(([k, l]) => [l, formatBRL(emp[k])])
+            .concat((emp.extraProventos || []).map(item => [item.label, formatBRL(item.valor)]));
+        const descontos = LABELS_DESCONTOS.filter(([k]) => emp[k]).map(([k, l]) => [l, formatBRL(emp[k])])
+            .concat((emp.extraDescontos || []).map(item => [item.label, formatBRL(item.valor)]));
+        const beneficios = LABELS_BENEFICIOS.filter(([k]) => emp[k]).map(([k, l]) => [l, formatBRL(emp[k])]);
+
+        doc.autoTable({
+            head: [['Proventos', 'Valor']], body: proventos.length ? proventos : [['—', formatBRL(0)]], startY: 48, theme: 'grid',
+            headStyles: { fillColor: [5, 150, 105], textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 10, cellPadding: 3 }, columnStyles: { 1: { halign: 'right' } }
+        });
+
+        doc.autoTable({
+            head: [['Descontos', 'Valor']], body: descontos.length ? descontos : [['—', formatBRL(0)]], startY: doc.lastAutoTable.finalY + 8, theme: 'grid',
+            headStyles: { fillColor: [220, 38, 38], textColor: 255, fontStyle: 'bold' },
+            styles: { fontSize: 10, cellPadding: 3 }, columnStyles: { 1: { halign: 'right' } }
+        });
+
+        let nextY = doc.lastAutoTable.finalY + 8;
+        if (beneficios.length) {
+            doc.autoTable({
+                head: [['Benefícios (informativo)', 'Valor']], body: beneficios, startY: nextY, theme: 'grid',
+                headStyles: { fillColor: [15, 76, 129], textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 10, cellPadding: 3 }, columnStyles: { 1: { halign: 'right' } }
+            });
+            nextY = doc.lastAutoTable.finalY + 8;
+        }
+
+        doc.setFillColor(240, 249, 255);
+        doc.rect(14, nextY, 182, 26, 'F');
+        doc.setFontSize(10); doc.setTextColor(71, 85, 105);
+        doc.text('Total Proventos', 20, nextY + 8); doc.text('Total Descontos', 90, nextY + 8); doc.text('Líquido a Pagar', 155, nextY + 8);
+        doc.setFontSize(13);
+        doc.setTextColor(5, 150, 105); doc.text(formatBRL(c.prov), 20, nextY + 18);
+        doc.setTextColor(220, 38, 38); doc.text(formatBRL(c.desc), 90, nextY + 18);
+        doc.setFontSize(15); doc.setTextColor(15, 76, 129); doc.setFont(undefined, 'bold'); doc.text(formatBRL(c.liq), 155, nextY + 18);
+
+        const filename = `Recibo_Unificado_${emp.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+        showPdfPreview(doc, filename);
+    }
 
     // --- PDF INDIVIDUAL (ficha/contracheque do colaborador) ---
     function exportEmployeePDF(index) {
@@ -3054,5 +3428,6 @@
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 </body>
 </html>
