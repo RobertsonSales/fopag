@@ -186,6 +186,12 @@
         .btn-recibo-unificado:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -4px rgba(15,76,129,0.55); filter: brightness(1.05); }
         .btn-recibo-unificado:active { transform: translateY(0); }
 
+        /* --- Listagem retrátil: cabeçalho clicável recolhe/expande o quadro --- */
+        .list-header { cursor: pointer; user-select: none; }
+        .list-header:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+        .lh-chevron { display: inline-block; transition: transform 0.18s ease; color: var(--primary); font-size: 0.9rem; }
+        .lh-chevron.collapsed { transform: rotate(-90deg); }
+
         /* --- Modal do Recibo Unificado (busca inteligente de vendedor) --- */
         .ru-search-wrap { position: relative; margin-top: 6px; }
         .ru-search-wrap .ru-search-icon {
@@ -231,6 +237,20 @@
             padding: 30px 20px; text-align: center; color: var(--muted); font-size: 0.9rem;
         }
         .ru-hint { font-size: 0.8rem; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+        /* O preview de PDF deve ficar ACIMA do modal do Recibo Unificado, que permanece aberto */
+        #pdfPreviewOverlay { z-index: 1100; }
+
+        /* Checkbox de emissão do recibo unificado ao lado de cada registro */
+        .ru-check { display: flex; align-items: center; flex-shrink: 0; padding-right: 2px; }
+        .ru-check input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+        .ru-result-item.emitido { background: rgba(5, 150, 105, 0.07); }
+        .ru-result-item.emitido .ru-nome::after { content: ' ✔'; color: var(--success); font-size: 0.85rem; }
+
+        /* Barra de ações do modal do Recibo Unificado (marcar/desmarcar todos) */
+        .ru-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .ru-toolbar-label { font-size: 0.8rem; color: var(--muted); }
+        .ru-toggle-btn { padding: 6px 12px; font-size: 0.8rem; }
 
         .card { background: var(--card); border-radius: 8px; box-shadow: 0 4px 6px -1px var(--shadow-color); padding: 20px; margin-bottom: 20px; overflow-x: auto;}
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -781,17 +801,19 @@
     </div>
 
     <div class="card">
-        <div class="list-header" id="listHeader">
+        <div class="list-header" id="listHeader" role="button" tabindex="0" aria-expanded="true" aria-controls="listBodyWrap" onclick="toggleListagem()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleListagem();}" title="Clique para recolher ou expandir a listagem">
             <div class="lh-title">
+                <span id="listChevron" class="lh-chevron" aria-hidden="true">▾</span>
                 📋 Listagem de Colaboradores
                 <span class="lh-count" id="lhCount">0</span>
             </div>
-            <div id="listHeaderActions" style="display:flex; gap:8px; align-items:center;">
+            <div id="listHeaderActions" style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation()">
                 <button type="button" id="btnReciboUnificado" class="btn-recibo-unificado" style="display:none;" onclick="openReciboUnificadoModal()" title="Gerar recibo único de um vendedor consolidando todas as empresas em que atua">
                     🧾 Recibo Unificado
                 </button>
             </div>
         </div>
+        <div id="listBodyWrap">
         <table id="mainTable">
             <thead>
                 <tr>
@@ -806,6 +828,7 @@
             </thead>
             <tbody id="tableBody"></tbody>
         </table>
+        </div>
     </div>
 </div>
 
@@ -958,9 +981,14 @@
             <button type="button" class="ru-clear-btn" onclick="limparReciboUnifBusca()" title="Limpar busca">✕</button>
         </div>
         <div class="ru-hint" id="reciboUnifHint"></div>
+        <div class="ru-toolbar">
+            <label class="ru-toolbar-label">Recibos marcados para impressão:</label>
+            <button type="button" class="btn-outline ru-toggle-btn" onclick="toggleTodosRecibos()" title="Marcar ou desmarcar todos os recibos listados">Marcar/Desmarcar todos</button>
+        </div>
         <div class="ru-results" id="reciboUnifResults"></div>
         <div class="modal-footer">
             <button class="btn-outline" onclick="closeReciboUnificadoModal()">Cancelar</button>
+            <button type="button" class="btn-success" onclick="imprimirRecibosSelecionados()" title="Gera um único PDF com uma página por recibo marcado">🖨️ Imprimir Selecionados</button>
         </div>
     </div>
 </div>
@@ -1535,6 +1563,26 @@
         btn.style.display = isVinculoComissoes(categoria) ? 'inline-flex' : 'none';
     }
 
+    // --- LISTAGEM RETRÁTIL: recolhe/expande o quadro "Listagem de Colaboradores" ---
+    // Apenas o cabeçalho permanece visível quando recolhido; a tabela e seus IDs
+    // continuam no DOM, então filtros, exportações e o PDF seguem funcionando.
+    function setListagemCollapsed(collapsed) {
+        const header = document.getElementById('listHeader');
+        const wrap = document.getElementById('listBodyWrap');
+        const chev = document.getElementById('listChevron');
+        if (!header || !wrap) return;
+        wrap.style.display = collapsed ? 'none' : '';
+        header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        if (chev) chev.classList.toggle('collapsed', collapsed);
+    }
+
+    function toggleListagem() {
+        const wrap = document.getElementById('listBodyWrap');
+        if (!wrap) return;
+        const ficaraVisivel = (wrap.style.display === 'none');
+        setListagemCollapsed(!ficaraVisivel);
+    }
+
     function atualizarContagemListagem() {
         const el = document.getElementById('lhCount');
         if (!el) return;
@@ -2074,6 +2122,38 @@
         document.getElementById('reciboUnifOverlay').classList.remove('active');
     }
 
+    // --- Estado de marcação dos recibos (persistido em localStorage) ---
+    // A chave de cada registro é o nome normalizado do vendedor; um registro marcado
+    // caracteriza um recibo que deverá ser (ou que já tenha sido) emitido/impresso.
+    const RECIBO_UNIF_STORAGE_KEY = 'reciboUnifEmitidos_v1';
+    function obterRecibosEmitidos() {
+        try { return JSON.parse(localStorage.getItem(RECIBO_UNIF_STORAGE_KEY)) || {}; }
+        catch (e) { return {}; }
+    }
+    function salvarReciboEmitido(chave, marcado) {
+        if (!chave) return;
+        const estado = obterRecibosEmitidos();
+        if (marcado) estado[chave] = true; else delete estado[chave];
+        try { localStorage.setItem(RECIBO_UNIF_STORAGE_KEY, JSON.stringify(estado)); } catch (e) {}
+    }
+    // Alterne o checkbox de um registro específico (chamado pelo onchange do input).
+    function toggleReciboUnifItem(chaveEncoded, el) {
+        salvarReciboEmitido(decodeURIComponent(chaveEncoded), !!(el && el.checked));
+        const item = el ? el.closest('.ru-result-item') : null;
+        if (item) item.classList.toggle('emitido', !!(el && el.checked));
+    }
+    // Marca ou desmarca todos os registros de uma vez (botão "Marcar/Desmarcar todos").
+    function toggleTodosRecibos() {
+        const chaves = obterVendedoresComissoes().map(v => normalizarTexto(v.nomeExib));
+        if (chaves.length === 0) return;
+        const estado = obterRecibosEmitidos();
+        const todosMarcados = chaves.every(c => estado[c]);
+        chaves.forEach(c => { if (todosMarcados) delete estado[c]; else estado[c] = true; });
+        try { localStorage.setItem(RECIBO_UNIF_STORAGE_KEY, JSON.stringify(estado)); } catch (e) {}
+        const input = document.getElementById('reciboUnifBusca');
+        renderReciboUnifResults(input ? input.value : '');
+    }
+
     function limparReciboUnifBusca() {
         const input = document.getElementById('reciboUnifBusca');
         const wrap = document.getElementById('reciboUnifSearchWrap');
@@ -2140,8 +2220,13 @@
                 const cls = badgeParaUnidade(r.unidade);
                 return `<span class="badge ${cls}">${escapeHtml(r.unidade || '—')}</span>`;
             }).join('');
+            const chave = normalizarTexto(v.nomeExib);
+            const marcado = !!obterRecibosEmitidos()[chave];
             return `
-                <div class="ru-result-item" data-idx="${idx}" onclick="gerarReciboUnificadoPorNome('${encodeURIComponent(v.nomeExib)}')">
+                <div class="ru-result-item${marcado ? ' emitido' : ''}" data-idx="${idx}" onclick="gerarReciboUnificadoPorNome('${encodeURIComponent(v.nomeExib)}')">
+                    <div class="ru-check" onclick="event.stopPropagation();" title="Marcar como recibo a emitir/emitido">
+                        <input type="checkbox" ${marcado ? 'checked' : ''} aria-label="Recibo de ${escapeHtml(v.nomeExib)}" onchange="toggleReciboUnifItem('${encodeURIComponent(chave)}', this)">
+                    </div>
                     <div style="min-width:0; flex:1;">
                         <div class="ru-nome">${escapeHtml(v.nomeExib)}</div>
                         <div class="ru-empresas">${badges}</div>
@@ -2162,7 +2247,11 @@
             return;
         }
         const agregado = agregarVendedor(alvo);
-        closeReciboUnificadoModal();
+        // O modal PERMANECE aberto: o PDF abre sobre ele (z-index maior), permitindo
+        // emitir quantos recibos o operador quiser sem reabrir a busca.
+        salvarReciboEmitido(normalizarTexto(alvo.nomeExib), true);
+        const inputBusca = document.getElementById('reciboUnifBusca');
+        renderReciboUnifResults(inputBusca ? inputBusca.value : '');
         exportReciboUnificadoPDF(agregado);
     }
 
@@ -2172,9 +2261,19 @@
     // vendedor atua (ex.: "Labmedic + Diag Rio"), e o título da faixa superior,
     // que passa a ser "RECIBO UNIFICADO DE PAGAMENTO".
     function exportReciboUnificadoPDF(emp) {
-        const c = calcEmp(emp);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('portrait', 'mm', 'a4');
+        desenharReciboUnificado(doc, emp);
+        const filename = `Recibo_Unificado_${emp.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+        showPdfPreview(doc, filename);
+    }
+
+    // Desenha o conteúdo do recibo unificado no documento jsPDF informado, mantendo
+    // exatamente o mesmo layout, cores, fontes, tabelas e resumo final. Separada da
+    // função acima para permitir consolidar vários recibos marcados em um único PDF
+    // (uma página por recibo), como faz "imprimirRecibosSelecionados".
+    function desenharReciboUnificado(doc, emp) {
+        const c = calcEmp(emp);
 
         doc.setFillColor(15, 76, 129);
         doc.rect(0, 0, 210, 25, 'F');
@@ -2225,9 +2324,25 @@
         doc.setTextColor(5, 150, 105); doc.text(formatBRL(c.prov), 20, nextY + 18);
         doc.setTextColor(220, 38, 38); doc.text(formatBRL(c.desc), 90, nextY + 18);
         doc.setFontSize(15); doc.setTextColor(15, 76, 129); doc.setFont(undefined, 'bold'); doc.text(formatBRL(c.liq), 155, nextY + 18);
+    }
 
-        const filename = `Recibo_Unificado_${emp.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
-        showPdfPreview(doc, filename);
+    // Gera um único PDF contendo uma página por recibo marcado (checkbox), na ordem
+    // alfabética da listagem, para a impressão em lote pelo operador.
+    function imprimirRecibosSelecionados() {
+        const emitidos = obterRecibosEmitidos();
+        const marcados = obterVendedoresComissoes().filter(v => emitidos[normalizarTexto(v.nomeExib)]);
+        if (marcados.length === 0) {
+            alert('Nenhum recibo está marcado. Utilize as caixas de seleção ao lado de cada registro ou o botão "Marcar/Desmarcar todos".');
+            return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('portrait', 'mm', 'a4');
+        marcados.forEach((v, i) => {
+            if (i > 0) doc.addPage();
+            desenharReciboUnificado(doc, agregarVendedor(v));
+        });
+        const nomeArquivo = `Recibos_Unificados_${marcados.length}vendedor(es)_${new Date().toISOString().slice(0,10)}.pdf`;
+        showPdfPreview(doc, nomeArquivo);
     }
 
     // --- PDF INDIVIDUAL (ficha/contracheque do colaborador) ---
@@ -3188,6 +3303,8 @@
         sortPayrollData();
         closeImportWizard();
         applyFilters();
+        // Após carregar os dados da planilha, a listagem inicia recolhida
+        setListagemCollapsed(true);
     }
 
     // --- Detecção de assinatura de arquivo (ZIP normal x CFB/OLE criptografado) ---
@@ -3380,6 +3497,8 @@
             sortPayrollData();
             closeImportWizard();
             applyFilters();
+            // Após carregar os dados da planilha, a listagem inicia recolhida
+            setListagemCollapsed(true);
             alert('Importação concluída com sucesso!');
         }
     }
@@ -3429,5 +3548,6 @@
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
