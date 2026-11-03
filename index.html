@@ -258,6 +258,16 @@
         }
         .ru-hint { font-size: 0.8rem; color: var(--muted); margin-top: 8px; font-style: italic; }
 
+        /* Modal de compartilhamento via WhatsApp (abre sobre o modal de detalhes) */
+        #whatsOverlay { z-index: 1050; }
+        .btn-whats { background: #25D366; color: #fff; border: none; }
+        .btn-whats:hover { background: #1ebe5a; }
+        #whatsObs { width: 100%; min-height: 110px; resize: vertical; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; background: var(--card); color: var(--text); }
+        #whatsObs:focus, #whatsFone:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
+        .whats-preview { background: var(--bg); border: 1px solid var(--border); border-left: 4px solid #25D366; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; white-space: pre-wrap; color: var(--text); }
+        .whats-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+        .whats-err { display: none; color: var(--danger); font-size: 0.85rem; margin-top: 6px; }
+
         /* O preview de PDF deve ficar ACIMA do modal do Recibo Unificado, que permanece aberto */
         #pdfPreviewOverlay { z-index: 1100; }
 
@@ -674,7 +684,7 @@
         </div>
 
         <div class="landing-actions landing-actions-top">
-            <button class="landing-cta cta-violet" onclick="irParaImportacaoSistema()">🔄 Importar Planilha</button>
+            <button class="landing-cta cta-violet" onclick="irParaImportacaoSistema()">🔄 Importar Planilha Nova</button>
             <button class="landing-cta-secondary" onclick="entrarSemImportar()">Entrar sem importar →</button>
         </div>
 
@@ -949,6 +959,34 @@
     <div class="modal" style="max-width: 720px;">
         <button class="close-btn" onclick="closeDetailModal()">&times;</button>
         <div id="detailModalBody"></div>
+    </div>
+</div>
+
+<!-- Modal de Compartilhamento via WhatsApp -->
+<div class="modal-overlay" id="whatsOverlay">
+    <div class="modal" style="max-width: 560px;">
+        <button class="close-btn" onclick="fecharWhatsModal()">&times;</button>
+        <h2>💬 Enviar PDF via WhatsApp</h2>
+        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:15px;">Colaborador: <strong id="whatsNome" style="color:var(--text);"></strong></p>
+        <div class="form-group" style="margin-bottom:15px;">
+            <label for="whatsFone">Número do WhatsApp do destinatário</label>
+            <input type="tel" id="whatsFone" placeholder="(21) 99999-9999" autocomplete="off" oninput="atualizarWhatsModoNota()">
+            <div class="whats-note">Informe com DDD (sem o código do país, será usado +55). O número fica salvo para os próximos envios deste colaborador.</div>
+            <div class="whats-err" id="whatsErr"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:15px;">
+            <label for="whatsObs">Observações para acompanhar o PDF</label>
+            <textarea id="whatsObs" placeholder="Ex.: Segue sua ficha de pagamento. O valor será creditado no dia 5. Qualquer dúvida, fale com o RH." oninput="atualizarWhatsPreview()"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Mensagem que será enviada</label>
+            <div class="whats-preview" id="whatsPreview"></div>
+            <div class="whats-note" id="whatsModoNota"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-outline" onclick="fecharWhatsModal()">Cancelar</button>
+            <button class="btn-whats" id="whatsEnviarBtn" onclick="enviarPDFWhatsApp()">💬 Enviar pelo WhatsApp</button>
+        </div>
     </div>
 </div>
 
@@ -2095,6 +2133,7 @@
 
             <div class="modal-footer">
                 <button class="btn-outline" onclick="closeDetailModal()">Fechar</button>
+                <button class="btn-whats" onclick="abrirWhatsModal(${index})" title="Enviar o PDF deste colaborador via WhatsApp, com observações">💬 Compartilhar no WhatsApp</button>
                 <button class="btn-danger" onclick="exportEmployeePDF(${index})">📄 Exportar PDF</button>
             </div>`;
         document.getElementById('detailModalOverlay').classList.add('active');
@@ -2414,6 +2453,12 @@
     function exportEmployeePDF(index) {
         const emp = payrollData[index];
         if (!emp) return;
+        const { doc, filename } = montarFichaPDF(emp);
+        showPdfPreview(doc, filename);
+    }
+
+    // Monta o PDF individual (usado tanto na exportação quanto no envio por WhatsApp)
+    function montarFichaPDF(emp) {
         const c = calcEmp(emp);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('portrait', 'mm', 'a4');
@@ -2469,7 +2514,128 @@
         doc.setFontSize(15); doc.setTextColor(15, 76, 129); doc.setFont(undefined, 'bold'); doc.text(formatBRL(c.liq), 155, nextY + 18);
 
         const filename = `Ficha_${emp.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
-        showPdfPreview(doc, filename);
+        return { doc, filename };
+    }
+
+    // --- COMPARTILHAMENTO DO PDF INDIVIDUAL VIA WHATSAPP ---
+    // 1) Em navegadores com Web Share (celulares e alguns desktops) o PDF é anexado
+    //    automaticamente: o operador escolhe o WhatsApp e o contato na folha de compartilhamento.
+    // 2) Nos demais, o PDF é baixado e o WhatsApp (wa.me) abre com a mensagem pronta;
+    //    o operador só precisa anexar o arquivo baixado à conversa.
+    const WHATS_STORAGE_KEY = 'whatsappContatos_v1';
+    let whatsEmpIndex = null;
+
+    function whatsChaveContato(emp) { return normalizarTexto((emp.nome || '') + '|' + (emp.unidade || '')); }
+    function whatsLerContatos() {
+        try { return JSON.parse(localStorage.getItem(WHATS_STORAGE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function whatsSalvarContato(emp, fone) {
+        try {
+            const c = whatsLerContatos();
+            if (fone) c[whatsChaveContato(emp)] = fone; else delete c[whatsChaveContato(emp)];
+            localStorage.setItem(WHATS_STORAGE_KEY, JSON.stringify(c));
+        } catch (e) { /* armazenamento indisponível: apenas não lembra o número */ }
+    }
+
+    // Retorna só dígitos com DDI (55 por padrão); '' se vazio; null se inválido
+    function normalizarTelefoneWhats(raw) {
+        let d = String(raw || '').replace(/\D/g, '');
+        if (!d) return '';
+        d = d.replace(/^0+/, '');
+        if (d.length === 10 || d.length === 11) d = '55' + d;
+        if (d.length < 12 || d.length > 15) return null;
+        return d;
+    }
+
+    function whatsPodeAnexar(file) {
+        try { return !!(navigator.canShare && navigator.share && navigator.canShare({ files: [file] })); }
+        catch (e) { return false; }
+    }
+
+    function whatsMontarMensagem(emp, obs) {
+        const periodo = currentPeriodLabel ? ` – ${currentPeriodLabel}` : '';
+        let msg = `*Ficha de Pagamento${periodo}*\n${emp.nome} (${emp.unidade})`;
+        const o = String(obs || '').trim();
+        if (o) msg += `\n\n${o}`;
+        return msg;
+    }
+
+    function atualizarWhatsPreview() {
+        const emp = payrollData[whatsEmpIndex];
+        if (!emp) return;
+        document.getElementById('whatsPreview').textContent = whatsMontarMensagem(emp, document.getElementById('whatsObs').value);
+    }
+
+    // Informa ao operador como o envio vai funcionar, conforme o número esteja preenchido ou não
+    function atualizarWhatsModoNota() {
+        const fone = normalizarTelefoneWhats(document.getElementById('whatsFone').value);
+        const el = document.getElementById('whatsModoNota');
+        if (fone) {
+            el.textContent = `A conversa com +${fone} será aberta no WhatsApp com a mensagem pronta e o PDF será baixado — anexe o PDF baixado à conversa.`;
+            return;
+        }
+        let anexa = false;
+        try { anexa = whatsPodeAnexar(new File([new Blob(['x'], { type: 'application/pdf' })], 'x.pdf', { type: 'application/pdf' })); } catch (e) {}
+        el.textContent = anexa
+            ? 'Sem número informado, o PDF será anexado automaticamente: escolha o WhatsApp e o contato na janela de compartilhamento.'
+            : 'Sem número informado, o WhatsApp abrirá para você escolher o contato; o PDF será baixado — anexe-o à conversa.';
+    }
+
+    function abrirWhatsModal(index) {
+        const emp = payrollData[index];
+        if (!emp) return;
+        whatsEmpIndex = index;
+        document.getElementById('whatsNome').textContent = emp.nome;
+        document.getElementById('whatsFone').value = whatsLerContatos()[whatsChaveContato(emp)] || '';
+        document.getElementById('whatsObs').value = '';
+        document.getElementById('whatsErr').style.display = 'none';
+        atualizarWhatsModoNota();
+        atualizarWhatsPreview();
+        document.getElementById('whatsOverlay').classList.add('active');
+        setTimeout(() => document.getElementById('whatsObs').focus(), 50);
+    }
+    function fecharWhatsModal() {
+        document.getElementById('whatsOverlay').classList.remove('active');
+        whatsEmpIndex = null;
+    }
+
+    async function enviarPDFWhatsApp() {
+        const emp = payrollData[whatsEmpIndex];
+        if (!emp) return;
+        const errEl = document.getElementById('whatsErr');
+        errEl.style.display = 'none';
+
+        const foneRaw = document.getElementById('whatsFone').value;
+        const fone = normalizarTelefoneWhats(foneRaw);
+        if (fone === null) {
+            errEl.textContent = 'Número inválido. Informe o DDD e o número (ex.: 21 99999-9999) ou deixe o campo em branco.';
+            errEl.style.display = 'block';
+            return;
+        }
+        const texto = whatsMontarMensagem(emp, document.getElementById('whatsObs').value);
+        whatsSalvarContato(emp, foneRaw.trim());
+
+        const { doc, filename } = montarFichaPDF(emp);
+        const blob = doc.output('blob');
+        const file = new File([blob], filename, { type: 'application/pdf' });
+
+        if (!fone && whatsPodeAnexar(file)) {
+            try {
+                await navigator.share({ files: [file], text: texto, title: 'Ficha de Pagamento' });
+                fecharWhatsModal();
+                return;
+            } catch (err) {
+                if (err && err.name === 'AbortError') return; // operador cancelou a folha de compartilhamento
+                console.warn('Compartilhamento nativo falhou; usando alternativa por link.', err);
+            }
+        }
+
+        // Com número informado (ou sem suporte a anexo automático): abre a conversa com a mensagem pronta
+        // e baixa o PDF para o operador anexá-lo.
+        const url = `https://wa.me/${fone}?text=${encodeURIComponent(texto)}`;
+        window.open(url, '_blank', 'noopener');
+        await salvarArquivoComSeletor(blob, filename, { mimeType: 'application/pdf', extension: '.pdf', description: 'Documento PDF' });
+        fecharWhatsModal();
     }
 
     // --- EXPORTAÇÃO EXCEL ---
