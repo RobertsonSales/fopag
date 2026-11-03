@@ -38,7 +38,6 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/forge/1.4.0/forge.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -132,6 +131,27 @@
             font-size: 0.9rem; min-width: 200px; cursor: pointer; background: var(--card); color: var(--text);
         }
         .filter-item select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
+        /* Filtro multisseleção com checkbox */
+        .mf { position: relative; flex: 1; min-width: 200px; }
+        .mf-btn {
+            width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--card);
+            color: var(--text); font-size: 0.9rem; font-weight: 400; cursor: pointer; text-align: left; font-family: inherit;
+        }
+        .mf-btn:focus, .mf.open .mf-btn { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--focus-ring); }
+        .mf-btn .mf-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mf-btn .mf-caret { font-size: 0.7rem; color: var(--muted); transition: transform .15s; }
+        .mf.open .mf-caret { transform: rotate(180deg); }
+        .mf-panel {
+            display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 100%; width: max-content; max-width: 340px;
+            max-height: 280px; overflow-y: auto; background: var(--card); border: 1px solid var(--border);
+            border-radius: 8px; box-shadow: 0 10px 15px -3px var(--shadow-color); padding: 6px;
+        }
+        .mf.open .mf-panel { display: block; }
+        .filter-item .mf-opt, .mf-opt { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 400; color: var(--text); user-select: none; }
+        .mf-opt:hover { background: var(--bg); }
+        .mf-opt input { padding: 0; width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+        .filter-item .mf-opt.mf-all { font-weight: 600; color: var(--text); border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0; margin-bottom: 4px; }
         .filter-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
         .filter-actions button { padding: 8px 14px; font-size: 0.85rem; }
         .filter-clear-item { margin-left: auto; }
@@ -597,6 +617,7 @@
             header { flex-direction: column; align-items: flex-start; }
             .filter-group { flex-direction: column; align-items: stretch; }
             .filter-item select { min-width: auto; }
+            .mf { min-width: 0; }
             .landing-hero { flex-direction: column-reverse; text-align: center; gap: 30px; }
             .landing-actions { align-items: center; }
             .landing-content h1 { font-size: 2.2rem; }
@@ -649,11 +670,10 @@
 
     <div class="landing-hero">
         <div class="landing-content">
-             <p class="landing-desc">Sistema interno de folha de pagamento. Importe a planilha oficial de salários, organize colaboradores CLT e MEI/PJ por Empresa.</p>
+             <p class="landing-desc">Sistema interno de folha de pagamento. Reimporte a planilha gerada pelo sistema, organize colaboradores CLT e MEI/PJ por Empresa.</p>
         </div>
 
         <div class="landing-actions landing-actions-top">
-            <button class="landing-cta" onclick="irParaImportacao()">📥 Importar Planilha Antiga</button>
             <button class="landing-cta cta-violet" onclick="irParaImportacaoSistema()">🔄 Importar Planilha Nova</button>
             <button class="landing-cta-secondary" onclick="entrarSemImportar()">Entrar sem importar →</button>
         </div>
@@ -717,10 +737,6 @@
         <h1><span class="logo">GRUPO LABMEDIC </span> Gestão de Folha de Pagamento</h1>
         <div id="periodBadge" style="display:none; align-items:center; gap:6px; margin-top:4px; font-size:0.95rem; color:var(--muted);">📅 Competência: <strong id="periodBadgeText"></strong></div>
         <div class="toolbar">
-            <label class="btn-outline btn-file">
-                📥 Importar Planilha Antiga
-                <input type="file" id="importFile" accept=".xlsx,.xls" onchange="handleImportFile(event)">
-            </label>
             <label class="btn-outline btn-file" title="Reimportar uma planilha gerada por este sistema (Exportar Excel), restaurando todos os colaboradores e a competência">
                 🔄 Importar Planilha Nova
                 <input type="file" id="importSystemFile" accept=".xlsx,.xls" onchange="handleImportSystemFile(event)">
@@ -759,21 +775,14 @@
             <div class="filter-item">
                 <label>Empresa</label>
                 <div style="display:flex; gap:6px;">
-                    <select id="filterEmpresa" onchange="applyFilters()" style="flex:1;">
-                        <option value="todas">Todas as Empresas</option>
-                    </select>
+                    <div class="mf" id="filterEmpresa"></div>
                     <button type="button" class="btn-outline" style="padding: 8px 12px;" onclick="adicionarNovaEmpresa()" title="Cadastrar nova empresa/unidade">+</button>
                 </div>
             </div>
             <div class="filter-item">
                 <label>Categoria de Vínculo</label>
                 <div style="display:flex; gap:6px;">
-                    <select id="filterCategoria" onchange="applyFilters()" style="flex:1;">
-                        <option value="todos">Todos os Vínculos</option>
-                        <option value="CLT">CLT</option>
-                        <option value="MEI/PJ">MEI / PJ</option>
-                        <option value="CLT + MEI/PJ">CLT + MEI/PJ</option>
-                    </select>
+                    <div class="mf" id="filterCategoria"></div>
                     <button type="button" class="btn-outline" style="padding: 8px 12px;" onclick="adicionarNovaCategoria()" title="Adicionar nova categoria de vínculo">+</button>
                 </div>
             </div>
@@ -932,15 +941,6 @@
                 <button type="submit" class="btn-primary">Salvar Colaborador</button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Modal do Assistente de Importação -->
-<div class="modal-overlay" id="importWizardOverlay">
-    <div class="modal" style="max-width: 640px;">
-        <button class="close-btn" onclick="closeImportWizard()">&times;</button>
-        <h2 id="importWizardTitle">Importar Planilha</h2>
-        <div id="importWizardBody"></div>
     </div>
 </div>
 
@@ -1103,6 +1103,86 @@
     }
     sortPayrollData();
 
+    // --- FILTRO MULTISSELEÇÃO (checkbox): permite marcar um, vários ou todos os itens ---
+    // "todos" = modo em que o filtro acompanha a lista inteira (inclusive itens novos que surgirem).
+    function criarMultiFiltro(elId, rotuloTodos, rotuloPlural) {
+        const root = document.getElementById(elId);
+        const st = { todos: true, sel: new Set(), opcoes: [] };
+
+        root.innerHTML = `
+            <button type="button" class="mf-btn" aria-haspopup="true" aria-expanded="false">
+                <span class="mf-label"></span><span class="mf-caret">▼</span>
+            </button>
+            <div class="mf-panel" role="group"></div>`;
+        const btn = root.querySelector('.mf-btn');
+        const panel = root.querySelector('.mf-panel');
+        const label = root.querySelector('.mf-label');
+
+        function setOpen(v) { root.classList.toggle('open', v); btn.setAttribute('aria-expanded', String(v)); }
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const abrir = !root.classList.contains('open');
+            document.querySelectorAll('.mf.open').forEach(o => { if (o !== root) o.classList.remove('open'); });
+            setOpen(abrir);
+        });
+        panel.addEventListener('click', (e) => e.stopPropagation());
+        document.addEventListener('click', () => setOpen(false));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+
+        function atualizarRotulo() {
+            const n = st.sel.size;
+            if (st.todos) label.textContent = rotuloTodos;
+            else if (n === 0) label.textContent = 'Nenhuma seleção';
+            else if (n === 1) label.textContent = [...st.sel][0];
+            else label.textContent = `${n} ${rotuloPlural}`;
+        }
+
+        function desenhar() {
+            panel.innerHTML = '';
+            const mk = (texto, checked, cls, onChange) => {
+                const l = document.createElement('label');
+                l.className = 'mf-opt' + (cls ? ' ' + cls : '');
+                const i = document.createElement('input');
+                i.type = 'checkbox'; i.checked = checked;
+                i.addEventListener('change', () => onChange(i.checked));
+                const t = document.createElement('span'); t.textContent = texto;
+                l.append(i, t); panel.appendChild(l);
+                return i;
+            };
+            mk(rotuloTodos, st.todos, 'mf-all', (c) => {
+                st.todos = c;
+                st.sel = new Set(c ? st.opcoes : []);
+                desenhar(); applyFilters();
+            });
+            st.opcoes.forEach(o => mk(o, st.sel.has(o), '', (c) => {
+                if (c) st.sel.add(o); else st.sel.delete(o);
+                st.todos = st.opcoes.length > 0 && st.opcoes.every(x => st.sel.has(x));
+                desenhar(); applyFilters();
+            }));
+            atualizarRotulo();
+        }
+
+        return {
+            // Atualiza a lista de opções preservando a seleção atual
+            setOpcoes(lista) {
+                st.opcoes = lista.slice();
+                if (st.todos) st.sel = new Set(st.opcoes);
+                else st.sel = new Set([...st.sel].filter(v => st.opcoes.includes(v)));
+                desenhar();
+            },
+            reset() { st.todos = true; st.sel = new Set(st.opcoes); desenhar(); },
+            ativo() { return !st.todos; },
+            valores() { return st.todos ? st.opcoes.slice() : [...st.sel]; },
+            casa(valor) { return st.todos || st.sel.has(valor); },
+            descricao(textoTodos) { return st.todos ? textoTodos : (st.sel.size ? [...st.sel].join(', ') : 'Nenhum'); }
+        };
+    }
+    let filtroEmpresa = null, filtroCategoria = null;
+    function garantirMultiFiltros() {
+        if (!filtroEmpresa) filtroEmpresa = criarMultiFiltro('filterEmpresa', 'Todas as Empresas', 'empresas selecionadas');
+        if (!filtroCategoria) filtroCategoria = criarMultiFiltro('filterCategoria', 'Todos os Vínculos', 'vínculos selecionados');
+    }
+
     // --- EMPRESAS / UNIDADES (base fixa + empresas cadastradas pelo usuário) ---
     const BASE_EMPRESAS = ['Labmedic', 'Diag Rio'];
     let customEmpresas = [];
@@ -1136,10 +1216,8 @@
     function renderEmpresaOptions() {
         const opcoesHtml = todasEmpresas().map(e => `<option value="${e}">${e}</option>`).join('');
 
-        const filterSel = document.getElementById('filterEmpresa');
-        const valorFiltroAtual = filterSel.value;
-        filterSel.innerHTML = '<option value="todas">Todas as Empresas</option>' + opcoesHtml;
-        if ([...filterSel.options].some(o => o.value === valorFiltroAtual)) filterSel.value = valorFiltroAtual;
+        garantirMultiFiltros();
+        filtroEmpresa.setOpcoes(todasEmpresas());
 
         const unidadeSel = document.getElementById('unidade');
         const valorUnidadeAtual = unidadeSel.value;
@@ -1208,10 +1286,8 @@
     function renderCategoriaOptions() {
         const opcoesHtml = todasCategorias().map(c => `<option value="${c}">${c}</option>`).join('');
 
-        const filterSel = document.getElementById('filterCategoria');
-        const valorFiltroAtual = filterSel.value;
-        filterSel.innerHTML = '<option value="todos">Todos os Vínculos</option>' + opcoesHtml;
-        if ([...filterSel.options].some(o => o.value === valorFiltroAtual)) filterSel.value = valorFiltroAtual;
+        garantirMultiFiltros();
+        filtroCategoria.setOpcoes(todasCategorias());
 
         const tipoSel = document.getElementById('tipo');
         const valorTipoAtual = tipoSel.value;
@@ -1321,11 +1397,6 @@
     }
 
     // --- PÁGINA DE ABERTURA ---
-    function irParaImportacao() {
-        document.getElementById('landingPage').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'block';
-        document.getElementById('importFile').click();
-    }
     function irParaImportacaoSistema() {
         document.getElementById('landingPage').style.display = 'none';
         document.getElementById('appContainer').style.display = 'block';
@@ -1487,8 +1558,9 @@
     }
 
     function limparTodosFiltros() {
-        document.getElementById('filterEmpresa').value = 'todas';
-        document.getElementById('filterCategoria').value = 'todos';
+        garantirMultiFiltros();
+        filtroEmpresa.reset();
+        filtroCategoria.reset();
         limparBusca();
     }
 
@@ -1506,16 +1578,14 @@
         // Garante que os seletores (Empresa e Categoria de Vínculo) reflitam os dados atuais.
         renderEmpresaOptions();
         renderCategoriaOptions();
-        const empresa = document.getElementById('filterEmpresa').value;
-        const categoria = document.getElementById('filterCategoria').value;
         const buscaRaw = (document.getElementById('filterBusca')?.value || '').trim();
         const termosBusca = normalizarTexto(buscaRaw).split(/\s+/).filter(t => t.length > 0);
 
         const hintEl = document.getElementById('searchMatchHint');
 
         filteredData = payrollData.filter(emp => {
-            const matchEmpresa = empresa === 'todas' || emp.unidade === empresa;
-            const matchCategoria = categoria === 'todos' || emp.tipo === categoria;
+            const matchEmpresa = filtroEmpresa.casa(emp.unidade);
+            const matchCategoria = filtroCategoria.casa(emp.tipo);
             if (!termosBusca.length) return matchEmpresa && matchCategoria;
 
             // Combina a busca inteligente com os demais filtros (não substitui).
@@ -1559,8 +1629,9 @@
     function atualizarBotaoReciboUnificado() {
         const btn = document.getElementById('btnReciboUnificado');
         if (!btn) return;
-        const categoria = document.getElementById('filterCategoria').value;
-        btn.style.display = isVinculoComissoes(categoria) ? 'inline-flex' : 'none';
+        // Aparece quando o filtro está restrito somente a vínculo(s) COMISSÕES
+        const sel = filtroCategoria.ativo() ? filtroCategoria.valores() : [];
+        btn.style.display = (sel.length > 0 && sel.every(isVinculoComissoes)) ? 'inline-flex' : 'none';
     }
 
     // --- LISTAGEM RETRÁTIL: recolhe/expande o quadro "Listagem de Colaboradores" ---
@@ -1621,7 +1692,7 @@
                     <div class="empty-state">
                         <div class="icon">📂</div>
                         <h3>${payrollData.length === 0 ? 'Nenhum colaborador cadastrado' : 'Nenhum colaborador para os filtros selecionados'}</h3>
-                        <p>${payrollData.length === 0 ? 'Clique em "Importar Excel" para carregar uma planilha, ou em "+ Novo Colaborador" para cadastrar manualmente.' : 'Ajuste os filtros acima para ver outros colaboradores.'}</p>
+                        <p>${payrollData.length === 0 ? 'Clique em "Importar Planilha Nova" para carregar uma planilha, ou em "+ Novo Colaborador" para cadastrar manualmente.' : 'Ajuste os filtros acima para ver outros colaboradores.'}</p>
                     </div>
                 </td></tr>`;
             return;
@@ -1763,19 +1834,15 @@
     const LABELS_BENEFICIOS = [['vr', 'Vale Refeição/Alimentação'], ['vt', 'Vale Transporte']];
 
     function getFiltroDescricao() {
-        const empresa = document.getElementById('filterEmpresa').value;
-        const categoria = document.getElementById('filterCategoria').value;
-        return `Empresa: ${empresa === 'todas' ? 'Todas' : empresa}  |  Vínculo: ${categoria === 'todos' ? 'Todos' : categoria}`;
+        return `Empresa: ${filtroEmpresa.descricao('Todas')}  |  Vínculo: ${filtroCategoria.descricao('Todos')}`;
     }
 
     // --- CONFIRMAÇÃO DE EXPORTAÇÃO COM FILTROS ATIVOS ---
     // Verifica se há algum filtro (Empresa, Categoria de Vínculo ou Busca Inteligente)
     // diferente do padrão, o que significa que os dados exibidos/exportados são um recorte.
     function temFiltrosAtivos() {
-        const empresa = document.getElementById('filterEmpresa').value;
-        const categoria = document.getElementById('filterCategoria').value;
         const busca = (document.getElementById('filterBusca')?.value || '').trim();
-        return empresa !== 'todas' || categoria !== 'todos' || busca.length > 0;
+        return filtroEmpresa.ativo() || filtroCategoria.ativo() || busca.length > 0;
     }
 
     let pendingExportFn = null;
@@ -1792,13 +1859,11 @@
         }
         pendingExportFn = fnExecutar;
 
-        const empresa = document.getElementById('filterEmpresa').value;
-        const categoria = document.getElementById('filterCategoria').value;
         const busca = (document.getElementById('filterBusca')?.value || '').trim();
 
         let itens = '';
-        itens += `<li><strong>Empresa:</strong> ${escapeHtml(empresa === 'todas' ? 'Todas' : empresa)}</li>`;
-        itens += `<li><strong>Categoria de Vínculo:</strong> ${escapeHtml(categoria === 'todos' ? 'Todos' : categoria)}</li>`;
+        itens += `<li><strong>Empresa:</strong> ${escapeHtml(filtroEmpresa.descricao('Todas'))}</li>`;
+        itens += `<li><strong>Categoria de Vínculo:</strong> ${escapeHtml(filtroCategoria.descricao('Todos'))}</li>`;
         if (busca) itens += `<li><strong>Busca Inteligente:</strong> "${escapeHtml(busca)}"</li>`;
 
         document.getElementById('exportConfirmBody').innerHTML = `
@@ -2651,7 +2716,7 @@
 
         // A coluna para anotações manuais é exclusiva da exportação filtrada por MEI/PJ.
         // Para todos os outros vínculos (inclusive "Todos"), preserva o formato original.
-        const exibirObservacoes = document.getElementById('filterCategoria').value === 'MEI/PJ';
+        const exibirObservacoes = (filtroCategoria.ativo() && filtroCategoria.valores().length === 1 && filtroCategoria.valores()[0] === 'MEI/PJ');
         const headers = [exibirObservacoes
             ? ["Nome", "Unidade", "Tipo", "Proventos", "Descontos", "Líquido", "Observações"]
             : ["Nome", "Unidade", "Tipo", "Proventos", "Descontos", "Líquido"]
@@ -2990,34 +3055,6 @@
     }
     // ---------- [FIM] exportPDFProfissional ----------
 
-    // ==================================================================================
-    // --- IMPORTAÇÃO DE PLANILHA (Assistente: decriptação -> seleção de aba -> extração) ---
-    // ==================================================================================
-
-    // Mapeamento das rotulações (rótulos de linha) da planilha para os campos do sistema.
-    // As chaves devem corresponder EXATAMENTE (após normalização) ao texto usado na coluna de rótulos.
-    const ANCHOR_CLT = 'SALÁRIO';
-    const ANCHOR_PJ  = 'PRINCIPAL - SERVIÇOS';
-
-    const FIELD_MAP_CLT = {
-        'SALÁRIO': 'salario', 'INSS': 'inss', 'IRRF': 'irrf', 'MULTA': 'multa', 'DESCONTO': 'desconto',
-        'PENSÃO ALIM': 'pensao', 'ADIANTAMENTO': 'adiantamento', 'DESCONTO REFEIÇÃO': 'descRef', 'OUTROS': 'outros',
-        'ADIANT FÉRIAS': 'adiantFerias', 'ADIC 1/3 FÉRIAS': 'adicFerias', 'INSS FÉRIAS': 'inssFerias',
-        'INSS DIFERENÇA FÉRIAS': 'inssDifFerias', 'IRRF FÉRIAS': 'irrfFerias', 'ADIANT ABONO': 'adiantAbono',
-        'AD 13º SALÁRIO': 'ad13', 'INSS 13º SAL': 'inss13', 'IRRF 13º SAL': 'irrf13', 'EMPRES. CONSIG.': 'consignado',
-        'ASSISTENCIA MEDICA': 'assistMed', 'PLANO DE SAUDE': 'planoSaude', 'PLANO ODONTOLOGICO': 'planoOdonto',
-        'VENDA DE FÉRIAS': 'vendaFerias', 'SALARIO EXTRA': 'salExtra'
-    };
-    const FIELD_MAP_PJ = {
-        'PRINCIPAL - SERVIÇOS': 'servicos', 'PLANO DA SAUDE': 'planoSaude', 'REFEIÇÕES': 'vr', 'FÉRIAS': 'adiantFerias',
-        'TELEFONE': 'telefone', 'PLANTÕES': 'plantoes', 'VEICULO': 'ajudaCarro', 'AJUDA DE CARRO': 'ajudaCarro',
-        'TRANSPORTE': 'vt', 'MULTAS': 'multa', 'DESCONTOS': 'desconto'
-    };
-
-    function normLabel(s) {
-        return String(s === null || s === undefined ? '' : s).trim().toUpperCase().replace(/\s+/g, ' ');
-    }
-
     function parseNumericCell(raw) {
         if (typeof raw === 'number') return raw;
         if (typeof raw === 'string') {
@@ -3026,108 +3063,6 @@
             return isNaN(num) ? 0 : num;
         }
         return 0;
-    }
-
-    // Localiza todas as "âncoras" de bloco (início de tabela CLT ou MEI/PJ) em qualquer posição da planilha
-    function findAnchors(aoa) {
-        const anchors = [];
-        for (let r = 0; r < aoa.length; r++) {
-            const row = aoa[r] || [];
-            for (let c = 0; c < row.length; c++) {
-                const val = normLabel(row[c]);
-                if (val === ANCHOR_CLT) anchors.push({ row: r, col: c, tipo: 'CLT' });
-                else if (val === ANCHOR_PJ) anchors.push({ row: r, col: c, tipo: 'MEI/PJ' });
-            }
-        }
-        return anchors;
-    }
-
-    // Verifica se a aba tem estrutura compatível com uma folha de pagamento mensal
-    // (evita abas como "TEMPO DE CASA", que reaproveitam o rótulo "SALÁRIO" em outro formato)
-    function analyzeSheetStructure(aoa) {
-        const anchors = findAnchors(aoa);
-        if (anchors.length === 0) return { ok: false, anchors: [] };
-        const colCounts = {};
-        anchors.forEach(a => { colCounts[a.col] = (colCounts[a.col] || 0) + 1; });
-        const maxSameCol = Math.max(...Object.values(colCounts));
-        if (maxSameCol > 2) return { ok: false, anchors }; // muitos blocos empilhados na mesma coluna = outro tipo de tabela
-        return { ok: true, anchors };
-    }
-
-    // Extrai os colaboradores de uma aba, evitando duplicidades e classificando corretamente unidade/tipo
-    function parseSheetEmployees(ws) {
-        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
-        const { ok, anchors } = analyzeSheetStructure(aoa);
-        if (!ok || anchors.length === 0) return [];
-
-        const maxCol = aoa.reduce((m, r) => Math.max(m, r ? r.length : 0), 0) - 1;
-        const distinctCols = [...new Set(anchors.map(a => a.col))].sort((a, b) => a - b);
-        const employeesMap = new Map(); // chave nome|unidade -> { emp, tipos } (mescla CLT + MEI/PJ da mesma pessoa)
-
-        anchors.forEach(anchor => {
-            const { row: labelRow, col: labelCol, tipo } = anchor;
-            const namesRow = labelRow - 1;
-            if (namesRow < 0) return;
-
-            // Coluna final do bloco = coluna da próxima âncora à direita, menos 1
-            const nextCol = distinctCols.find(c => c > labelCol);
-            const endCol = nextCol !== undefined ? nextCol - 1 : maxCol;
-
-            // Fim das linhas de rótulo do bloco = primeira célula em branco na coluna,
-            // ou a próxima âncora na MESMA coluna (ex.: bloco CLT da 2ª empresa mais abaixo)
-            const sameColAnchorRows = anchors.filter(a => a.col === labelCol && a.row > labelRow).map(a => a.row).sort((a, b) => a - b);
-            const stopRow = sameColAnchorRows.length ? sameColAnchorRows[0] : aoa.length;
-            const fieldRows = [];
-            for (let r = labelRow; r < stopRow; r++) {
-                const label = normLabel((aoa[r] || [])[labelCol]);
-                if (!label) break;
-                fieldRows.push({ row: r, label });
-            }
-
-            // Unidade/empresa: por padrão, o bloco "principal" (linha de nomes = primeira linha da aba) é Labmedic;
-            // qualquer bloco secundário é a segunda empresa (Diag Rio). Um título explícito acima do bloco confirma isso.
-            let unidade = (namesRow === 0) ? 'Labmedic' : 'Diag Rio';
-            for (let r = labelRow - 1; r >= Math.max(0, labelRow - 15); r--) {
-                const t = normLabel((aoa[r] || [])[0]);
-                if (t && !FIELD_MAP_CLT[t] && t !== ANCHOR_PJ && !FIELD_MAP_PJ[t]) {
-                    if (t.includes('DIAG')) { unidade = 'Diag Rio'; break; }
-                    if (t.includes('LABMEDIC')) { unidade = 'Labmedic'; break; }
-                }
-            }
-
-            const fieldMap = tipo === 'CLT' ? FIELD_MAP_CLT : FIELD_MAP_PJ;
-
-            for (let c = labelCol + 1; c <= endCol; c++) {
-                const nome = String((aoa[namesRow] || [])[c] || '').trim();
-                if (!nome || /^TOTAL/i.test(nome)) continue;
-
-                const campos = {};
-                fieldRows.forEach(({ row, label }) => {
-                    if (label === 'TOTAL GERAL') return; // é calculado pelo próprio sistema
-                    const key = fieldMap[label];
-                    if (!key) return; // rótulo não mapeado é ignorado
-                    const val = parseNumericCell((aoa[row] || [])[c]);
-                    campos[key] = (campos[key] || 0) + val;
-                });
-
-                // Mesma pessoa (nome + unidade) presente tanto no bloco CLT quanto no MEI/PJ
-                // é UM único colaborador com dois vínculos financeiros — some-se tudo num só registro,
-                // em vez de criar duas linhas ("duplicidade") para a mesma pessoa.
-                const dupKey = `${nome}|${unidade}`;
-                if (employeesMap.has(dupKey)) {
-                    const existing = employeesMap.get(dupKey);
-                    Object.keys(campos).forEach(k => { existing.emp[k] = (existing.emp[k] || 0) + campos[k]; });
-                    existing.tipos.add(tipo);
-                } else {
-                    employeesMap.set(dupKey, { emp: { nome, unidade, ...campos }, tipos: new Set([tipo]) });
-                }
-            }
-        });
-
-        return Array.from(employeesMap.values()).map(({ emp, tipos }) => {
-            emp.tipo = Array.from(tipos).sort().join(' + '); // 'CLT', 'MEI/PJ' ou 'CLT + MEI/PJ'
-            return emp;
-        });
     }
 
     // ==================================================================================
@@ -3326,235 +3261,20 @@
         const campo = document.getElementById('systemImportPeriodo');
         const periodo = (campo ? campo.value : (periodoDetectado || '')).trim();
         payrollData = pendingSystemImportEmployees;
+        pendingSystemImportEmployees = null;
         currentPeriodLabel = periodo || null;
         updatePeriodDisplay();
         sortPayrollData();
-        closeImportWizard();
         applyFilters();
         // Após carregar os dados da planilha, a listagem inicia recolhida
         setListagemCollapsed(true);
     }
 
-    // --- Detecção de assinatura de arquivo (ZIP normal x CFB/OLE criptografado) ---
+    // --- Detecção de assinatura de arquivo (.xlsx = ZIP) ---
     function isZipSignature(b) { return b[0] === 0x50 && b[1] === 0x4B && (b[2] === 0x03 || b[2] === 0x05 || b[2] === 0x07); }
-    function isCFBSignature(b) {
-        const sig = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
-        return sig.every((v, i) => b[i] === v);
-    }
-    function u16(a, o) { return a[o] | (a[o + 1] << 8); }
-    function u32(a, o) { return (a[o] | (a[o + 1] << 8) | (a[o + 2] << 16) | (a[o + 3] << 24)) >>> 0; }
-    function uint8ToBinary(bytes) {
-        let result = '';
-        const chunk = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunk) result += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-        return result;
-    }
-    function binaryToUint8(bin) {
-        const out = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i) & 0xff;
-        return out;
-    }
-    function strToUtf16LEBinary(str) {
-        let out = '';
-        for (let i = 0; i < str.length; i++) {
-            const code = str.charCodeAt(i);
-            out += String.fromCharCode(code & 0xff, (code >> 8) & 0xff);
-        }
-        return out;
-    }
 
-    // Derivação de chave conforme ECMA-376 "Standard Encryption" (o esquema usado pelo Excel para proteger com senha)
-    function deriveStandardKey(password, saltBytes, keySizeBits) {
-        const saltBin = uint8ToBinary(saltBytes);
-        const passwordBin = strToUtf16LEBinary(password);
-        let h = forge.md.sha1.create().update(saltBin + passwordBin).digest().getBytes();
-        for (let i = 0; i < 50000; i++) {
-            const iterBin = String.fromCharCode(i & 0xff, (i >> 8) & 0xff, (i >> 16) & 0xff, (i >> 24) & 0xff);
-            h = forge.md.sha1.create().update(iterBin + h).digest().getBytes();
-        }
-        const hfinal = forge.md.sha1.create().update(h + '\x00\x00\x00\x00').digest().getBytes();
-        const cbHash = 20;
-        const xorBytes = (a, b) => { let o = ''; for (let i = 0; i < a.length; i++) o += String.fromCharCode(a.charCodeAt(i) ^ b.charCodeAt(i)); return o; };
-        let buf1 = xorBytes(hfinal, '\x36'.repeat(64).slice(0, cbHash)) + '\x36'.repeat(64).slice(cbHash);
-        const x1 = forge.md.sha1.create().update(buf1).digest().getBytes();
-        let buf2 = xorBytes(hfinal, '\x5c'.repeat(64).slice(0, cbHash)) + '\x5c'.repeat(64).slice(cbHash);
-        const x2 = forge.md.sha1.create().update(buf2).digest().getBytes();
-        return (x1 + x2).slice(0, keySizeBits / 8);
-    }
-
-    function aesEcbDecryptForge(keyBin, dataBin) {
-        const decipher = forge.cipher.createDecipher('AES-ECB', keyBin);
-        decipher.start({});
-        decipher.update(forge.util.createBuffer(dataBin));
-        decipher.finish(function () { return true; }); // não faz sentido remover "padding" PKCS7 aqui: truncamos manualmente pelo totalSize
-        return decipher.output.getBytes();
-    }
-
-    // --- Estado do assistente de importação ---
-    let pendingCFBRaw = null;
-    let currentWorkbook = null;
-    let currentPeriodLabel = null; // competência (mês/ano) lida da linha 1 das abas da planilha importada; exibida na tela e usada em todos os relatórios exportados
-
-    function handleImportFile(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const bytes = new Uint8Array(e.target.result);
-                if (isZipSignature(bytes)) {
-                    openWorkbookFromBytes(bytes);
-                } else if (isCFBSignature(bytes)) {
-                    pendingCFBRaw = bytes;
-                    showImportWizard('password');
-                } else {
-                    alert('Formato de arquivo não reconhecido. Selecione um arquivo .xlsx válido.');
-                }
-            } catch (err) {
-                alert('Erro ao ler o arquivo: ' + err.message);
-                console.error(err);
-            }
-        };
-        reader.readAsArrayBuffer(file);
-        event.target.value = '';
-    }
-
-    function openWorkbookFromBytes(bytes) {
-        let wb;
-        try {
-            wb = XLSX.read(bytes, { type: 'array' });
-        } catch (err) {
-            alert('Não foi possível ler a planilha: ' + err.message);
-            return;
-        }
-        currentWorkbook = wb;
-        openSheetSelector(wb);
-    }
-
-    function attemptDecrypt() {
-        const password = document.getElementById('importPasswordInput').value;
-        const errEl = document.getElementById('importPasswordError');
-        errEl.style.display = 'none';
-        try {
-            const cfb = XLSX.CFB.read(pendingCFBRaw, { type: 'array' });
-            const encInfoEntry = XLSX.CFB.find(cfb, 'EncryptionInfo');
-            const encPkgEntry = XLSX.CFB.find(cfb, 'EncryptedPackage');
-            if (!encInfoEntry || !encPkgEntry) throw new Error('Estrutura de criptografia não reconhecida.');
-
-            const info = new Uint8Array(encInfoEntry.content);
-            const vMajor = u16(info, 0), vMinor = u16(info, 2);
-            if (!(vMajor === 4 && vMinor === 2)) throw new Error('UNSUPPORTED_SCHEME');
-
-            const headerSize = u32(info, 8);
-            const header = info.slice(12, 12 + headerSize);
-            const verifier = info.slice(12 + headerSize);
-            const keySize = u32(header, 16);
-            const saltSize = u32(verifier, 0);
-            const salt = verifier.slice(4, 4 + saltSize);
-            const encVerifier = verifier.slice(4 + saltSize, 4 + saltSize + 16);
-            const encVerifierHash = verifier.slice(4 + saltSize + 16 + 4);
-
-            const keyBin = deriveStandardKey(password, salt, keySize);
-            const verifierPlain = aesEcbDecryptForge(keyBin, uint8ToBinary(encVerifier));
-            const expectedHash = forge.md.sha1.create().update(verifierPlain).digest().getBytes();
-            const verifierHashPlain = aesEcbDecryptForge(keyBin, uint8ToBinary(encVerifierHash)).slice(0, 20);
-            if (verifierHashPlain !== expectedHash) throw new Error('WRONG_PASSWORD');
-
-            const pkg = new Uint8Array(encPkgEntry.content);
-            const totalSize = u32(pkg, 0);
-            const plainBin = aesEcbDecryptForge(keyBin, uint8ToBinary(pkg.slice(8)));
-            const plainBytes = binaryToUint8(plainBin).slice(0, totalSize);
-
-            openWorkbookFromBytes(plainBytes);
-        } catch (err) {
-            if (err.message === 'WRONG_PASSWORD') {
-                errEl.textContent = 'Senha incorreta. Tente novamente.';
-            } else if (err.message === 'UNSUPPORTED_SCHEME') {
-                errEl.textContent = 'Esta planilha usa um esquema de criptografia não suportado pelo navegador. Abra-a no Excel, remova a senha (Arquivo > Informações > Proteger Pasta de Trabalho > Criptografar com Senha, deixando em branco) e importe novamente.';
-            } else {
-                errEl.textContent = 'Erro ao processar o arquivo: ' + err.message;
-            }
-            errEl.style.display = 'block';
-        }
-    }
-
-    function openSheetSelector(wb) {
-        const analyses = wb.SheetNames.map(name => {
-            const ws = wb.Sheets[name];
-            const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
-            const { ok } = analyzeSheetStructure(aoa);
-            const count = ok ? parseSheetEmployees(ws).length : 0;
-            return { name, ok: ok && count > 0, count };
-        });
-        const lastOkIndex = analyses.map(a => a.ok).lastIndexOf(true);
-
-        const body = document.getElementById('importWizardBody');
-        body.innerHTML = `
-            <p style="margin-bottom:15px;color:#475569;">Selecione a aba (mês) da planilha que deseja importar:</p>
-            <div style="max-height:340px;overflow-y:auto;margin-bottom:10px;">
-                ${analyses.map((a, i) => `
-                    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;margin-bottom:8px;${a.ok ? 'cursor:pointer;' : 'opacity:0.55;'}">
-                        <input type="radio" name="sheetChoice" value="${a.name}" ${!a.ok ? 'disabled' : ''} ${i === lastOkIndex ? 'checked' : ''}>
-                        <span style="flex:1;">${a.name}</span>
-                        ${a.ok
-                            ? `<span class="badge badge-lab">${a.count} colaborador(es)</span>`
-                            : `<span class="badge" style="background:var(--badge-invalid-bg);color:var(--badge-invalid-text);">Estrutura não reconhecida</span>`}
-                    </label>`).join('')}
-            </div>
-            <div class="modal-footer">
-                <button class="btn-outline" onclick="closeImportWizard()">Cancelar</button>
-                <button class="btn-primary" onclick="confirmSheetSelection()">Importar desta aba</button>
-            </div>`;
-        showImportWizard('sheet');
-    }
-
-    function confirmSheetSelection() {
-        const selected = document.querySelector('input[name="sheetChoice"]:checked');
-        if (!selected) { alert('Selecione uma aba para importar.'); return; }
-        const sheetName = selected.value;
-        const ws = currentWorkbook.Sheets[sheetName];
-        const parsed = parseSheetEmployees(ws);
-        if (parsed.length === 0) {
-            alert('Nenhum colaborador reconhecido nesta aba.');
-            return;
-        }
-        if (confirm(`Importar ${parsed.length} colaborador(es) da aba "${sheetName}"? Isso substituirá os dados atuais da tabela.`)) {
-            payrollData = parsed;
-            currentPeriodLabel = extractPeriodFromSheetRow1(ws) || extractPeriodFromWorkbook(currentWorkbook) || sheetName;
-            updatePeriodDisplay();
-            sortPayrollData();
-            closeImportWizard();
-            applyFilters();
-            // Após carregar os dados da planilha, a listagem inicia recolhida
-            setListagemCollapsed(true);
-            alert('Importação concluída com sucesso!');
-        }
-    }
-
-    function showImportWizard(stage) {
-        document.getElementById('importWizardTitle').innerText = stage === 'password' ? 'Planilha Protegida por Senha' : 'Selecionar Aba para Importação';
-        if (stage === 'password') {
-            document.getElementById('importWizardBody').innerHTML = `
-                <p style="margin-bottom:15px;color:#475569;">Esta planilha está protegida por senha. Informe a senha para continuar.</p>
-                <div class="form-group">
-                    <label>Senha da planilha</label>
-                    <input type="password" id="importPasswordInput" placeholder="Digite a senha" onkeydown="if(event.key==='Enter'){event.preventDefault();attemptDecrypt();}">
-                </div>
-                <p id="importPasswordError" style="display:none;color:var(--danger);font-size:0.85rem;margin-top:8px;"></p>
-                <div class="modal-footer">
-                    <button class="btn-outline" onclick="closeImportWizard()">Cancelar</button>
-                    <button class="btn-primary" onclick="attemptDecrypt()">Desbloquear</button>
-                </div>`;
-        }
-        document.getElementById('importWizardOverlay').classList.add('active');
-    }
-
-    function closeImportWizard() {
-        document.getElementById('importWizardOverlay').classList.remove('active');
-        pendingCFBRaw = null;
-        currentWorkbook = null;
-        pendingSystemImportEmployees = null;
-    }
+    // Competência (mês/ano) da planilha importada; exibida na tela e usada em todos os relatórios exportados
+    let currentPeriodLabel = null;
 
     // Inicializar
     (async () => {
