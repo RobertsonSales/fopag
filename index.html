@@ -966,8 +966,18 @@
 <div class="modal-overlay" id="whatsOverlay">
     <div class="modal" style="max-width: 560px;">
         <button class="close-btn" onclick="fecharWhatsModal()">&times;</button>
-        <h2>💬 Enviar PDF via WhatsApp</h2>
+        <h2>💬 Enviar documento via WhatsApp</h2>
         <p style="color:var(--muted);font-size:0.9rem;margin-bottom:15px;">Colaborador: <strong id="whatsNome" style="color:var(--text);"></strong></p>
+        <div class="form-group" style="margin-bottom:15px;">
+            <label for="whatsDoc">Documento</label>
+            <select id="whatsDoc" onchange="aoTrocarWhatsDoc()"></select>
+        </div>
+        <div class="form-group" id="whatsNdWrap" style="margin-bottom:15px; display:none;">
+            <label for="whatsNdArquivo">PDF da Nota de Débito</label>
+            <input type="file" id="whatsNdArquivo" accept="application/pdf,.pdf" onchange="atualizarWhatsModoNota()">
+            <div class="whats-note">A Nota de Débito é emitida no emissor externo. Emita o PDF por lá e selecione-o aqui para enviá-lo.
+                <a href="#" onclick="abrirNotaDebito(); return false;">Abrir emissor de Nota de Débito ↗</a></div>
+        </div>
         <div class="form-group" style="margin-bottom:15px;">
             <label for="whatsFone">Número do WhatsApp do destinatário</label>
             <input type="tel" id="whatsFone" placeholder="(21) 99999-9999" autocomplete="off" oninput="atualizarWhatsModoNota()">
@@ -976,7 +986,8 @@
         </div>
         <div class="form-group" style="margin-bottom:15px;">
             <label for="whatsObs">Observações para acompanhar o PDF</label>
-            <textarea id="whatsObs" placeholder="Ex.: Segue sua ficha de pagamento. O valor será creditado no dia 5. Qualquer dúvida, fale com o RH." oninput="atualizarWhatsPreview()"></textarea>
+            <textarea id="whatsObs" placeholder="Ex.: Segue seu documento. O valor será creditado no dia 5. Qualquer dúvida, fale com o RH." oninput="atualizarWhatsPreview()"></textarea>
+            <div class="whats-note" id="whatsObsNota"></div>
         </div>
         <div class="form-group">
             <label>Mensagem que será enviada</label>
@@ -1758,6 +1769,7 @@
                     <td class="text-right" style="font-weight: bold; color: var(--success); font-size: 1.05rem;">${formatBRL(c.liq)}</td>
                     <td class="text-center">
                         <div style="display:flex; gap:6px; justify-content:center; flex-wrap:nowrap;">
+                            <button class="btn-whats" style="padding: 5px 10px; font-size: 0.8rem; border-radius: 6px; cursor: pointer;" onclick="abrirWhatsModal(${realIndex})" title="Enviar documento por WhatsApp (ficha, recibo ou nota de débito)">💬</button>
                             <button class="btn-outline" style="padding: 5px 10px; font-size: 0.8rem;" onclick="openModal(${realIndex})">Editar</button>
                             ${emp.tipo && emp.tipo.includes('MEI/PJ') ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="abrirNotaDebito()" title="Emitir Nota de Débito">ND</button>` : ''}
                             <button class="btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteEmp(${realIndex})">X</button>
@@ -2133,7 +2145,7 @@
 
             <div class="modal-footer">
                 <button class="btn-outline" onclick="closeDetailModal()">Fechar</button>
-                <button class="btn-whats" onclick="abrirWhatsModal(${index})" title="Enviar o PDF deste colaborador via WhatsApp, com observações">💬 Compartilhar no WhatsApp</button>
+                <button class="btn-whats" onclick="abrirWhatsModal(${index}, 'ficha')" title="Enviar o PDF deste colaborador via WhatsApp, com observações">💬 Compartilhar no WhatsApp</button>
                 <button class="btn-danger" onclick="exportEmployeePDF(${index})">📄 Exportar PDF</button>
             </div>`;
         document.getElementById('detailModalOverlay').classList.add('active');
@@ -2376,7 +2388,7 @@
     // exatamente o mesmo layout, cores, fontes, tabelas e resumo final. Separada da
     // função acima para permitir consolidar vários recibos marcados em um único PDF
     // (uma página por recibo), como faz "imprimirRecibosSelecionados".
-    function desenharReciboUnificado(doc, emp) {
+    function desenharReciboUnificado(doc, emp, obs) {
         const c = calcEmp(emp);
 
         doc.setFillColor(15, 76, 129);
@@ -2428,6 +2440,8 @@
         doc.setTextColor(5, 150, 105); doc.text(formatBRL(c.prov), 20, nextY + 18);
         doc.setTextColor(220, 38, 38); doc.text(formatBRL(c.desc), 90, nextY + 18);
         doc.setFontSize(15); doc.setTextColor(15, 76, 129); doc.setFont(undefined, 'bold'); doc.text(formatBRL(c.liq), 155, nextY + 18);
+        doc.setFont(undefined, 'normal');
+        desenharObservacoesPDF(doc, nextY + 34, obs);
     }
 
     // Gera um único PDF contendo uma página por recibo marcado (checkbox), na ordem
@@ -2449,6 +2463,23 @@
         showPdfPreview(doc, nomeArquivo);
     }
 
+    // Quadro "Observações" no final de um PDF de demonstrativo (somente quando há texto)
+    function desenharObservacoesPDF(doc, yInicial, obs) {
+        const obsTxt = String(obs || '').trim();
+        if (!obsTxt) return;
+        doc.setFont(undefined, 'normal'); doc.setFontSize(10); // mede o texto com a mesma fonte em que será impresso
+        const linhas = doc.splitTextToSize(obsTxt, 170);
+        const lh = 4.6, altura = linhas.length * lh + 14;
+        let y = yInicial;
+        if (y + altura > 285) { doc.addPage(); y = 20; }
+        doc.setFillColor(248, 250, 252); doc.setDrawColor(203, 213, 225);
+        doc.rect(14, y, 182, altura, 'FD');
+        doc.setFontSize(10); doc.setFont(undefined, 'bold'); doc.setTextColor(15, 76, 129);
+        doc.text('Observações', 18, y + 7);
+        doc.setFont(undefined, 'normal'); doc.setFontSize(10); doc.setTextColor(51, 65, 85);
+        doc.text(linhas, 18, y + 13);
+    }
+
     // --- PDF INDIVIDUAL (ficha/contracheque do colaborador) ---
     function exportEmployeePDF(index) {
         const emp = payrollData[index];
@@ -2458,7 +2489,8 @@
     }
 
     // Monta o PDF individual (usado tanto na exportação quanto no envio por WhatsApp)
-    function montarFichaPDF(emp) {
+    // obs (opcional): texto de observações do operador, impresso em um quadro ao final da ficha
+    function montarFichaPDF(emp, obs) {
         const c = calcEmp(emp);
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('portrait', 'mm', 'a4');
@@ -2512,20 +2544,26 @@
         doc.setTextColor(5, 150, 105); doc.text(formatBRL(c.prov), 20, nextY + 18);
         doc.setTextColor(220, 38, 38); doc.text(formatBRL(c.desc), 90, nextY + 18);
         doc.setFontSize(15); doc.setTextColor(15, 76, 129); doc.setFont(undefined, 'bold'); doc.text(formatBRL(c.liq), 155, nextY + 18);
+        doc.setFont(undefined, 'normal');
+
+        desenharObservacoesPDF(doc, nextY + 34, obs);
 
         const filename = `Ficha_${emp.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
         return { doc, filename };
     }
 
-    // --- COMPARTILHAMENTO DO PDF INDIVIDUAL VIA WHATSAPP ---
-    // 1) Em navegadores com Web Share (celulares e alguns desktops) o PDF é anexado
-    //    automaticamente: o operador escolhe o WhatsApp e o contato na folha de compartilhamento.
-    // 2) Nos demais, o PDF é baixado e o WhatsApp (wa.me) abre com a mensagem pronta;
-    //    o operador só precisa anexar o arquivo baixado à conversa.
+    // --- COMPARTILHAMENTO DE DOCUMENTOS VIA WHATSAPP ---
+    // Documentos suportados (a partir da linha do colaborador ou do modal de detalhes):
+    //   ficha  – Ficha de Pagamento (PDF gerado aqui)
+    //   recibo – Recibo Unificado (PDF gerado aqui; apenas vínculo COMISSÕES)
+    //   nd     – Nota de Débito (emitida no emissor externo; o operador anexa o PDF; apenas MEI/PJ)
+    // Envio: 1) com número informado, abre a conversa com a mensagem pronta (wa.me) e o PDF fica
+    // disponível para anexar; 2) sem número, em navegadores com Web Share, o PDF segue anexado
+    // e o operador escolhe contato/WhatsApp na janela de compartilhamento.
     const WHATS_STORAGE_KEY = 'whatsappContatos_v1';
     let whatsEmpIndex = null;
 
-    function whatsChaveContato(emp) { return normalizarTexto((emp.nome || '') + '|' + (emp.unidade || '')); }
+    function whatsChaveContato(emp) { return normalizarTexto(emp.nome || ''); }
     function whatsLerContatos() {
         try { return JSON.parse(localStorage.getItem(WHATS_STORAGE_KEY)) || {}; } catch (e) { return {}; }
     }
@@ -2552,9 +2590,35 @@
         catch (e) { return false; }
     }
 
-    function whatsMontarMensagem(emp, obs) {
+    // Vendedor (consolidado) correspondente à linha, para o Recibo Unificado
+    function whatsAgregadoComissoes(emp) {
+        if (!isVinculoComissoes(emp.tipo)) return null;
+        const alvo = obterVendedoresComissoes().find(v => normalizarTexto(v.nomeExib) === normalizarTexto(emp.nome));
+        return alvo ? agregarVendedor(alvo) : null;
+    }
+
+    function whatsDocsDisponiveis(emp) {
+        const docs = [{ id: 'ficha', rotulo: 'Ficha de Pagamento' }];
+        if (whatsAgregadoComissoes(emp)) docs.push({ id: 'recibo', rotulo: 'Recibo Unificado (consolidado do vendedor)' });
+        if (emp.tipo && emp.tipo.includes('MEI/PJ')) docs.push({ id: 'nd', rotulo: 'Nota de Débito (anexar PDF)' });
+        return docs;
+    }
+
+    function whatsDocAtual() { return document.getElementById('whatsDoc').value || 'ficha'; }
+
+    function whatsMontarMensagem(emp, obs, tipoDoc) {
         const periodo = currentPeriodLabel ? ` – ${currentPeriodLabel}` : '';
-        let msg = `*Ficha de Pagamento${periodo}*\n${emp.nome} (${emp.unidade})`;
+        let titulo, linha2 = `${emp.nome} (${emp.unidade})`;
+        if (tipoDoc === 'recibo') {
+            titulo = `Recibo Unificado de Pagamento${periodo}`;
+            const ag = whatsAgregadoComissoes(emp);
+            if (ag) linha2 = `${ag.nome} (${ag.unidade})`;
+        } else if (tipoDoc === 'nd') {
+            titulo = `Nota de Débito${periodo}`;
+        } else {
+            titulo = `Ficha de Pagamento${periodo}`;
+        }
+        let msg = `*${titulo}*\n${linha2}`;
         const o = String(obs || '').trim();
         if (o) msg += `\n\n${o}`;
         return msg;
@@ -2563,34 +2627,53 @@
     function atualizarWhatsPreview() {
         const emp = payrollData[whatsEmpIndex];
         if (!emp) return;
-        document.getElementById('whatsPreview').textContent = whatsMontarMensagem(emp, document.getElementById('whatsObs').value);
+        document.getElementById('whatsPreview').textContent = whatsMontarMensagem(emp, document.getElementById('whatsObs').value, whatsDocAtual());
     }
 
-    // Informa ao operador como o envio vai funcionar, conforme o número esteja preenchido ou não
+    // Informa ao operador como o envio vai funcionar, conforme documento e número informado
     function atualizarWhatsModoNota() {
+        const tipo = whatsDocAtual();
         const fone = normalizarTelefoneWhats(document.getElementById('whatsFone').value);
         const el = document.getElementById('whatsModoNota');
+        const temArq = tipo === 'nd' && document.getElementById('whatsNdArquivo').files.length > 0;
+        const baixa = tipo === 'nd' ? 'o PDF selecionado já está no seu computador' : 'o PDF será baixado';
         if (fone) {
-            el.textContent = `A conversa com +${fone} será aberta no WhatsApp com a mensagem pronta e o PDF será baixado — anexe o PDF baixado à conversa.`;
+            el.textContent = `A conversa com +${fone} será aberta no WhatsApp com a mensagem pronta; ${baixa} — anexe-o à conversa.`;
             return;
         }
         let anexa = false;
         try { anexa = whatsPodeAnexar(new File([new Blob(['x'], { type: 'application/pdf' })], 'x.pdf', { type: 'application/pdf' })); } catch (e) {}
+        if (tipo === 'nd' && !temArq) { el.textContent = 'Selecione o PDF da Nota de Débito para enviar.'; return; }
         el.textContent = anexa
             ? 'Sem número informado, o PDF será anexado automaticamente: escolha o WhatsApp e o contato na janela de compartilhamento.'
-            : 'Sem número informado, o WhatsApp abrirá para você escolher o contato; o PDF será baixado — anexe-o à conversa.';
+            : `Sem número informado, o WhatsApp abrirá para você escolher o contato; ${baixa} — anexe-o à conversa.`;
     }
 
-    function abrirWhatsModal(index) {
+    function aoTrocarWhatsDoc() {
+        const tipo = whatsDocAtual();
+        document.getElementById('whatsNdWrap').style.display = tipo === 'nd' ? 'block' : 'none';
+        document.getElementById('whatsObsNota').textContent = tipo === 'nd'
+            ? 'No caso da Nota de Débito, as observações vão somente na mensagem (o PDF é o arquivo emitido no emissor externo).'
+            : 'As observações também serão impressas em um quadro no final do PDF.';
+        document.getElementById('whatsErr').style.display = 'none';
+        atualizarWhatsModoNota();
+        atualizarWhatsPreview();
+    }
+
+    function abrirWhatsModal(index, tipoInicial) {
         const emp = payrollData[index];
         if (!emp) return;
         whatsEmpIndex = index;
         document.getElementById('whatsNome').textContent = emp.nome;
+        const docs = whatsDocsDisponiveis(emp);
+        const sel = document.getElementById('whatsDoc');
+        sel.innerHTML = '';
+        docs.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.rotulo; sel.appendChild(o); });
+        sel.value = docs.some(d => d.id === tipoInicial) ? tipoInicial : docs[0].id;
+        document.getElementById('whatsNdArquivo').value = '';
         document.getElementById('whatsFone').value = whatsLerContatos()[whatsChaveContato(emp)] || '';
         document.getElementById('whatsObs').value = '';
-        document.getElementById('whatsErr').style.display = 'none';
-        atualizarWhatsModoNota();
-        atualizarWhatsPreview();
+        aoTrocarWhatsDoc();
         document.getElementById('whatsOverlay').classList.add('active');
         setTimeout(() => document.getElementById('whatsObs').focus(), 50);
     }
@@ -2604,24 +2687,42 @@
         if (!emp) return;
         const errEl = document.getElementById('whatsErr');
         errEl.style.display = 'none';
+        const erro = (msg) => { errEl.textContent = msg; errEl.style.display = 'block'; };
 
+        const tipo = whatsDocAtual();
         const foneRaw = document.getElementById('whatsFone').value;
         const fone = normalizarTelefoneWhats(foneRaw);
-        if (fone === null) {
-            errEl.textContent = 'Número inválido. Informe o DDD e o número (ex.: 21 99999-9999) ou deixe o campo em branco.';
-            errEl.style.display = 'block';
-            return;
-        }
-        const texto = whatsMontarMensagem(emp, document.getElementById('whatsObs').value);
-        whatsSalvarContato(emp, foneRaw.trim());
+        if (fone === null) { erro('Número inválido. Informe o DDD e o número (ex.: 21 99999-9999) ou deixe o campo em branco.'); return; }
 
-        const { doc, filename } = montarFichaPDF(emp);
-        const blob = doc.output('blob');
-        const file = new File([blob], filename, { type: 'application/pdf' });
+        const obs = document.getElementById('whatsObs').value;
+        let file, baixar = true;
+        if (tipo === 'nd') {
+            const arq = document.getElementById('whatsNdArquivo').files[0];
+            if (!arq) { erro('Selecione o PDF da Nota de Débito emitido.'); return; }
+            if (!/\.pdf$/i.test(arq.name) && arq.type !== 'application/pdf') { erro('O arquivo selecionado não é um PDF.'); return; }
+            file = arq.type === 'application/pdf' ? arq : new File([arq], arq.name, { type: 'application/pdf' });
+            baixar = false; // o operador já possui o arquivo
+        } else {
+            let doc, filename;
+            if (tipo === 'recibo') {
+                const ag = whatsAgregadoComissoes(emp);
+                if (!ag) { erro('Não foi possível montar o recibo unificado deste vendedor.'); return; }
+                const { jsPDF } = window.jspdf;
+                doc = new jsPDF('portrait', 'mm', 'a4');
+                desenharReciboUnificado(doc, ag, obs);
+                filename = `Recibo_Unificado_${ag.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+            } else {
+                ({ doc, filename } = montarFichaPDF(emp, obs));
+            }
+            file = new File([doc.output('blob')], filename, { type: 'application/pdf' });
+        }
+
+        const texto = whatsMontarMensagem(emp, obs, tipo);
+        whatsSalvarContato(emp, foneRaw.trim());
 
         if (!fone && whatsPodeAnexar(file)) {
             try {
-                await navigator.share({ files: [file], text: texto, title: 'Ficha de Pagamento' });
+                await navigator.share({ files: [file], text: texto, title: file.name.replace(/\.pdf$/i, '') });
                 fecharWhatsModal();
                 return;
             } catch (err) {
@@ -2631,10 +2732,9 @@
         }
 
         // Com número informado (ou sem suporte a anexo automático): abre a conversa com a mensagem pronta
-        // e baixa o PDF para o operador anexá-lo.
-        const url = `https://wa.me/${fone}?text=${encodeURIComponent(texto)}`;
-        window.open(url, '_blank', 'noopener');
-        await salvarArquivoComSeletor(blob, filename, { mimeType: 'application/pdf', extension: '.pdf', description: 'Documento PDF' });
+        // e, para PDFs gerados aqui, baixa o arquivo para o operador anexá-lo.
+        window.open(`https://wa.me/${fone}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+        if (baixar) await salvarArquivoComSeletor(file, file.name, { mimeType: 'application/pdf', extension: '.pdf', description: 'Documento PDF' });
         fecharWhatsModal();
     }
 
