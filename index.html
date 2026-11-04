@@ -996,6 +996,11 @@
         </div>
         <div class="modal-footer">
             <button class="btn-outline" onclick="fecharWhatsModal()">Cancelar</button>
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;margin-right:auto;">Abrir no:
+                <select id="whatsModo" onchange="definirModoWhats(this.value)">
+                    <option value="web">WhatsApp Web (mesma aba)</option>
+                    <option value="desktop">App WhatsApp Desktop</option>
+                </select></label>
             <button class="btn-whats" id="whatsEnviarBtn" onclick="enviarPDFWhatsApp()">💬 Enviar pelo WhatsApp</button>
         </div>
     </div>
@@ -2673,6 +2678,7 @@
         document.getElementById('whatsNdArquivo').value = '';
         document.getElementById('whatsFone').value = whatsLerContatos()[whatsChaveContato(emp)] || '';
         document.getElementById('whatsObs').value = '';
+        try { document.getElementById('whatsModo').value = localStorage.getItem(WHATS_MODO_KEY) || 'web'; } catch (e) {}
         aoTrocarWhatsDoc();
         document.getElementById('whatsOverlay').classList.add('active');
         setTimeout(() => document.getElementById('whatsObs').focus(), 50);
@@ -2680,6 +2686,50 @@
     function fecharWhatsModal() {
         document.getElementById('whatsOverlay').classList.remove('active');
         whatsEmpIndex = null;
+    }
+
+    // Abre a conversa REUTILIZANDO sempre a mesma aba do WhatsApp Web (janela nomeada),
+    // em vez de criar uma aba nova a cada envio. Assim não surge uma segunda instância do
+    // WhatsApp Web (que derrubaria a sessão em uso com o aviso "WhatsApp aberto em outra janela").
+    // Observação: o navegador não permite localizar abas abertas manualmente pelo usuário;
+    // a reutilização vale para a aba aberta pelo próprio sistema (a partir do 1º envio).
+    // Preferência opcional: usar o aplicativo WhatsApp Desktop (protocolo whatsapp://), sem abrir aba.
+    const WHATS_JANELA = 'fopag_whatsapp_web';
+    const WHATS_MODO_KEY = 'whatsappModoAbertura_v1'; // 'web' (padrão) ou 'desktop'
+    let whatsJanelaRef = null;
+
+    function abrirConversaWhats(fone, texto) {
+        const t = encodeURIComponent(texto);
+        let modo = 'web';
+        try { modo = localStorage.getItem(WHATS_MODO_KEY) || 'web'; } catch (e) {}
+
+        if (modo === 'desktop') {
+            // Aciona o app instalado sem criar aba (iframe oculto evita sair da página)
+            const url = `whatsapp://send?${fone ? 'phone=' + fone + '&' : ''}text=${t}`;
+            const ifr = document.createElement('iframe');
+            ifr.style.display = 'none'; ifr.src = url;
+            document.body.appendChild(ifr);
+            setTimeout(() => ifr.remove(), 2000);
+            return;
+        }
+
+        // Link direto do WhatsApp Web (evita a página intermediária do wa.me)
+        const url = `https://web.whatsapp.com/send?${fone ? 'phone=' + fone + '&' : ''}text=${t}&app_absent=0`;
+        // Sem 'noopener': com ele o navegador SEMPRE cria uma aba nova e ignora o nome da janela.
+        if (whatsJanelaRef && !whatsJanelaRef.closed) {
+            try { whatsJanelaRef.location.href = url; whatsJanelaRef.focus(); return; } catch (e) { /* segue */ }
+        }
+        const w = window.open(url, WHATS_JANELA);
+        if (w) {
+            try { w.opener = null; } catch (e) {} // mantém a segurança equivalente ao noopener
+            whatsJanelaRef = w;
+            try { w.focus(); } catch (e) {}
+        }
+    }
+
+    // Permite alternar o modo pelo console ou por um botão: definirModoWhats('desktop' | 'web')
+    function definirModoWhats(modo) {
+        try { localStorage.setItem(WHATS_MODO_KEY, modo === 'desktop' ? 'desktop' : 'web'); } catch (e) {}
     }
 
     async function enviarPDFWhatsApp() {
@@ -2733,7 +2783,7 @@
 
         // Com número informado (ou sem suporte a anexo automático): abre a conversa com a mensagem pronta
         // e, para PDFs gerados aqui, baixa o arquivo para o operador anexá-lo.
-        window.open(`https://wa.me/${fone}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+        abrirConversaWhats(fone, texto);
         if (baixar) await salvarArquivoComSeletor(file, file.name, { mimeType: 'application/pdf', extension: '.pdf', description: 'Documento PDF' });
         fecharWhatsModal();
     }
