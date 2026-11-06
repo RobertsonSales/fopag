@@ -74,6 +74,16 @@
         .logo { font-weight: 800; color: white; background: var(--primary); padding: 5px 10px; border-radius: 6px; font-size: 1.2rem;}
         
         .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .export-dropdown { position:relative; display:inline-flex; }
+        .export-menu { display:none; position:absolute; z-index:1200; right:0; top:calc(100% + 5px); min-width:240px; padding:6px; border:1px solid var(--border); border-radius:9px; background:var(--card); box-shadow:0 12px 28px var(--shadow-color); }
+        .export-dropdown.open .export-menu { display:block; }
+        .export-menu button { display:block; width:100%; text-align:left; padding:9px 11px; color:var(--text); background:transparent; border-radius:6px; font-size:.86rem; }
+        .export-menu button:hover { background:var(--bg); }
+        .grat-titlebar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding-right:28px; }
+        .grat-titlebar h2 { margin:0; border:0; padding:0; }
+        .grat-month-select { display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--muted); }
+        .grat-month-select input { padding:7px 9px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); }
+
         button, .btn-file {
             padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer;
             font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
@@ -751,9 +761,22 @@
                 🔄 Importar Planilha Nova
                 <input type="file" id="importSystemFile" accept=".xlsx,.xls" onchange="handleImportSystemFile(event)">
             </label>
-            <button class="btn-success" onclick="exportExcel()">📊 Exportar Excel</button>
-            <button class="btn-danger" onclick="exportPDF()">📄 Exportar PDF</button>
-            <button class="btn-prof" onclick="exportPDFProfissional()" title="Relatório profissional com resumo por empresa e valores líquidos por colaborador">💼 Líquidos a Pagar (R$)         </button>
+            <label class="btn-outline btn-file" title="Importar planilha de Gratificação Natalina">
+                🎄 Importar Gratificação
+                <input type="file" id="importGratFile" accept=".xlsx,.xls" onchange="importarPlanilhaGrat(event)">
+            </label>
+            <div class="export-dropdown" id="excelExportDropdown">
+                <button class="btn-success" type="button" onclick="toggleExportMenu('excelExportDropdown')">📊 Exportar Excel ▾</button>
+                <div class="export-menu"><button type="button" onclick="fecharMenusExport();exportExcel()">Folha de Pagamento</button><button type="button" id="menuExportGrat" onclick="fecharMenusExport();abrirExportPlanilhaGrat()" style="display:none;">Gratificação Natalina</button></div>
+            </div>
+            <div class="export-dropdown" id="pdfExportDropdown">
+                <button class="btn-danger" type="button" onclick="toggleExportMenu('pdfExportDropdown')">📄 Exportar PDF ▾</button>
+                <div class="export-menu"><button type="button" onclick="fecharMenusExport();exportPDF()">Folha de Pagamento</button><button type="button" id="menuPdfGrat" onclick="fecharMenusExport();exportarPdfGrat('analitico')" style="display:none;">Gratificação Natalina</button></div>
+            </div>
+            <div class="export-dropdown" id="profExportDropdown">
+                <button class="btn-prof" type="button" onclick="toggleExportMenu('profExportDropdown')" title="Relatório profissional com resumo por empresa e valores líquidos por colaborador">💼 Líquidos a Pagar (R$) ▾</button>
+                <div class="export-menu"><button type="button" onclick="fecharMenusExport();exportPDFProfissional()">Folha de Pagamento</button><button type="button" id="menuProfGrat" onclick="fecharMenusExport();exportarPdfGrat('liquidos')" style="display:none;">Gratificação Natalina</button></div>
+            </div>
             <button class="theme-toggle theme-toggle-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Alternar modo claro/escuro" aria-label="Alternar modo claro/escuro">🌙</button>
         </div>
     </header>
@@ -842,6 +865,7 @@
                     <th class="text-right">Total Proventos</th>
                     <th class="text-right">Total Descontos</th>
                     <th class="text-right">Líquido a Pagar</th>
+                    <th class="text-right" id="gratAmountHead" style="display:none;">Gratificação / Compensação (R$)</th>
                     <th class="text-center">Ações</th>
                 </tr>
             </thead>
@@ -952,6 +976,43 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- Modal de Gratificação Natalina -->
+<div class="modal-overlay" id="gratOverlay">
+  <div class="modal" style="max-width:760px;">
+    <button class="close-btn" onclick="fecharGratificacao()">&times;</button>
+    <div class="grat-titlebar"><h2>🎄 Gratificação Natalina</h2><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><label class="grat-month-select">📅 Mês de referência <input id="gratCompetencia" type="month" aria-label="Mês de referência da gratificação"></label><label class="grat-month-select">Parcela <select id="gratParcelaTipo" onchange="alterarParcelaGratificacao(this.value)" aria-label="Parcela da gratificação"><option value="1">1ª Parcela - Gratificação</option><option value="2">2ª Parcela - Gratificação</option></select></label></div></div>
+    <p id="gratIdentificacao" style="color:var(--muted);margin:0 0 18px;"></p>
+    <div class="form-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+      <div class="form-group"><label for="gratBase">Valor-base (remuneração habitual)</label><input id="gratBase" class="currency-input" value="R$ 0,00"></div>
+      <div class="form-group"><label for="gratMeses">Nº de meses (0 a 12)</label><input id="gratMeses" type="number" min="0" max="12" step="1" value="12"></div>
+      <div class="form-group"><label for="gratAdiant">Adiantamento Gratificação (50%)</label><input id="gratAdiant" readonly value="R$ 0,00"></div>
+      <div class="form-group"><label for="gratINSS">INSS</label><input id="gratINSS" class="currency-input" value="R$ 0,00"></div>
+      <div class="form-group"><label for="gratIRRF">IRRF</label><input id="gratIRRF" class="currency-input" value="R$ 0,00"></div>
+      <div class="form-group"><label for="gratOutros">Outros descontos</label><input id="gratOutros" class="currency-input" value="R$ 0,00"></div>
+      <div class="form-group"><label for="gratCreditos">Outros créditos</label><input id="gratCreditos" class="currency-input" value="R$ 0,00"></div>
+      <div class="form-group"><label for="gratFinal">Última parcela da gratificação</label><input id="gratFinal" readonly value="" placeholder="Informe INSS e/ou IRRF para exibir"></div>
+      <div class="form-group"><label for="gratLiquido">Valor líquido a ser pago</label><input id="gratLiquido" readonly value="R$ 0,00"></div>
+      <div class="form-group full"><label for="gratObs">Observações</label><input id="gratObs" type="text" maxlength="240" placeholder="Uma linha de observações"></div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;">
+      <button type="button" class="btn-outline" onclick="fecharGratificacao()">Fechar</button>
+      <button type="button" class="btn-outline" onclick="visualizarPdfGrat()">📄 Visualizar PDF</button>
+      <button type="button" class="btn-whats" onclick="compartilharGratWhats()">💬 Compartilhar via WhatsApp</button>
+      <button type="button" class="btn-primary" onclick="salvarGratificacao()">Salvar gratificação</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="gratParcelOverlay">
+  <div class="modal" style="max-width:480px;">
+    <button class="close-btn" onclick="fecharExportParcelaGrat()">&times;</button>
+    <h2>Exportar planilha da gratificação</h2>
+    <p style="color:var(--muted);margin:0 0 16px;">Selecione a parcela que este arquivo representa.</p>
+    <div class="form-group"><label for="gratParcelaSelect">Parcela</label><select id="gratParcelaSelect"><option value="1">1ª Parcela - Gratificação</option><option value="2">2ª Parcela - Gratificação</option></select></div>
+    <div class="modal-footer"><button class="btn-outline" onclick="fecharExportParcelaGrat()">Cancelar</button><button class="btn-primary" onclick="confirmarExportParcelaGrat()">Continuar exportação</button></div>
+  </div>
 </div>
 
 <!-- Modal de Detalhes do Colaborador -->
@@ -1738,11 +1799,13 @@
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        let totais = { prov: 0, desc: 0, liq: 0 };
+        let totais = { prov: 0, desc: 0, liq: 0, grat: 0 };
+        const showGratColumn=!!gratSheetImported;
+        atualizarVisibilidadeColunaGrat();
 
         if (filteredData.length === 0) {
             tbody.innerHTML = `
-                <tr><td colspan="7">
+                <tr><td colspan="8">
                     <div class="empty-state">
                         <div class="icon">📂</div>
                         <h3>${payrollData.length === 0 ? 'Nenhum colaborador cadastrado' : 'Nenhum colaborador para os filtros selecionados'}</h3>
@@ -1758,6 +1821,9 @@
             const badgeUnid = badgeParaUnidade(emp.unidade);
             const badgeTipo = emp.tipo === 'MEI/PJ' ? 'badge-mei' : (emp.tipo === 'CLT' ? 'badge-clt' : 'badge-mix');
             const realIndex = payrollData.indexOf(emp);
+            const grat=gratData[gratKey(emp)];
+            const liquidoGrat=grat?gratLiquidoTotal(grat):0;
+            if(grat)totais.grat+=liquidoGrat;
 
             tbody.innerHTML += `
                 <tr>
@@ -1772,8 +1838,10 @@
                     <td class="text-right">${formatBRL(c.prov)}</td>
                     <td class="text-right" style="color: var(--danger);">${formatBRL(c.desc)}</td>
                     <td class="text-right" style="font-weight: bold; color: var(--success); font-size: 1.05rem;">${formatBRL(c.liq)}</td>
+                    <td class="text-right" style="display:${showGratColumn?'table-cell':'none'};font-weight:600;color:var(--primary);">${grat?formatBRL(liquidoGrat):'—'}</td>
                     <td class="text-center">
                         <div style="display:flex; gap:6px; justify-content:center; flex-wrap:nowrap;">
+                            ${isGratEligible(emp) ? `<button class="btn-outline" style="padding:5px 9px;font-size:0.8rem;border-radius:6px;color:#9a3412;" onclick="abrirGratificacao(${realIndex})" title="Gratificação Natalina — adiantamento e parcela final">🎄</button>` : ''}
                             <button class="btn-whats" style="padding: 5px 10px; font-size: 0.8rem; border-radius: 6px; cursor: pointer;" onclick="abrirWhatsModal(${realIndex})" title="Enviar documento por WhatsApp (ficha, recibo ou nota de débito)">💬</button>
                             <button class="btn-outline" style="padding: 5px 10px; font-size: 0.8rem;" onclick="openModal(${realIndex})">Editar</button>
                             ${emp.tipo && emp.tipo.includes('MEI/PJ') ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="abrirNotaDebito()" title="Emitir Nota de Débito">ND</button>` : ''}
@@ -1790,6 +1858,7 @@
                     <td class="text-right" style="font-size: 1.1rem;">${formatBRL(totais.prov)}</td>
                     <td class="text-right" style="color: var(--danger); font-size: 1.1rem;">${formatBRL(totais.desc)}</td>
                     <td class="text-right" style="color: var(--success); font-size: 1.2rem;">${formatBRL(totais.liq)}</td>
+                    <td class="text-right" style="display:${showGratColumn?'table-cell':'none'};color:var(--primary);font-size:1.1rem;">${formatBRL(totais.grat)}</td>
                     <td></td>
                 </tr>`;
         }
@@ -2605,6 +2674,7 @@
     function whatsDocsDisponiveis(emp) {
         const docs = [{ id: 'ficha', rotulo: 'Ficha de Pagamento' }];
         if (whatsAgregadoComissoes(emp)) docs.push({ id: 'recibo', rotulo: 'Recibo Unificado (consolidado do vendedor)' });
+        if (gratData[gratKey(emp)]) docs.push({id:'grat',rotulo:'Gratificação Natalina / Compensação Extraordinária'});
         if (emp.tipo && emp.tipo.includes('MEI/PJ')) docs.push({ id: 'nd', rotulo: 'Nota de Débito (anexar PDF)' });
         return docs;
     }
@@ -2612,6 +2682,7 @@
     function whatsDocAtual() { return document.getElementById('whatsDoc').value || 'ficha'; }
 
     function whatsMontarMensagem(emp, obs, tipoDoc) {
+        if(tipoDoc==='grat'){const g=gratData[gratKey(emp)];if(g){const titulo=['mei/pj','pj-mei','pj/mei'].includes(normalizarTexto(g.tipo))?'COMPENSAÇÃO EXTRAORDINÁRIA POR SERVIÇOS ADICIONAIS':'Gratificação Natalina';let msg=`${titulo} — ${formatarMesGrat(g.competencia)||currentPeriodLabel||''} — ${rotuloParcelaGrat()}\n${g.nome} (${g.unidade})\nAdiantamento: ${formatBRL(g.adiantamento)}\nValor líquido a pagar: ${formatBRL(gratLiquidoTotal(g))}`;if(Number(g.inss)>0||Number(g.irrf)>0)msg+=`\nÚltima parcela: ${formatBRL(g.parcelaFinal||0)}`;if(String(obs||'').trim())msg+=`\n\n${String(obs).trim()}`;return msg;}}
         const periodo = currentPeriodLabel ? ` – ${currentPeriodLabel}` : '';
         let titulo, linha2 = `${emp.nome} (${emp.unidade})`;
         if (tipoDoc === 'recibo') {
@@ -2642,6 +2713,7 @@
         const el = document.getElementById('whatsModoNota');
         const temArq = tipo === 'nd' && document.getElementById('whatsNdArquivo').files.length > 0;
         const baixa = tipo === 'nd' ? 'o PDF selecionado já está no seu computador' : 'o PDF será baixado';
+        if(tipo==='grat'){el.textContent=fone?'A conversa com +'+fone+' será aberta com a mensagem pronta; o PDF será baixado para anexar.':'O PDF da gratificação será compartilhado como anexo quando o navegador oferecer suporte; caso contrário, será baixado para anexar.';return;}
         if (fone) {
             el.textContent = `A conversa com +${fone} será aberta no WhatsApp com a mensagem pronta; ${baixa} — anexe-o à conversa.`;
             return;
@@ -2761,6 +2833,9 @@
                 doc = new jsPDF('portrait', 'mm', 'a4');
                 desenharReciboUnificado(doc, ag, obs);
                 filename = `Recibo_Unificado_${ag.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+            } else if(tipo==='grat') {
+                const g=gratData[gratKey(emp)];if(!g){erro('Não há gratificação salva para este colaborador.');return;}
+                const out=montarPdfGrat({...g,observacoes:obs});doc=out.doc;filename=out.filename;
             } else {
                 ({ doc, filename } = montarFichaPDF(emp, obs));
             }
@@ -3592,6 +3667,153 @@
     // Competência (mês/ano) da planilha importada; exibida na tela e usada em todos os relatórios exportados
     let currentPeriodLabel = null;
 
+    // --- GRATIFICAÇÃO NATALINA (dados isolados da folha mensal) ---
+    const GRAT_KEY='gratificacaoNatalina_v1', GRAT_IMPORTED_KEY='gratificacaoPlanilhaImportada_v1', GRAT_PARCELA_KEY='gratificacaoParcelaSelecionada_v1';
+    let gratSheetImported=localStorage.getItem(GRAT_IMPORTED_KEY)==='1';
+    let gratParcelaSelecionada=localStorage.getItem(GRAT_PARCELA_KEY)==='2'?'2':'1';
+    let gratData={}; let gratEmpIndex=-1; let gratExportParcelPending=false;
+    function gratCompetenciaAtual(){return document.getElementById('gratCompetencia')?.value||'';}
+    function isGratEligible(emp){return !!emp&&['clt','mei/pj','pj-mei','pj/mei'].includes(normalizarTexto(emp.tipo));}
+    function formatarMesGrat(value){if(!value)return '';const raw=String(value).trim();if(/^\d{4}-\d{2}$/.test(raw)){const [y,m]=raw.split('-').map(Number),nome=MONTH_NAMES_PT[m-1];return nome?`${nome.charAt(0).toUpperCase()+nome.slice(1)} ${y}`:raw;}const rotulo=raw.match(/^([a-zçãáéíóúâêô]+)\s+(\d{4})$/i);if(rotulo){const nome=MONTH_NAMES_PT.find(m=>normalizarTexto(m)===normalizarTexto(rotulo[1]));if(nome)return `${nome.charAt(0).toUpperCase()+nome.slice(1)} ${rotulo[2]}`;}return raw;}
+    function toggleExportMenu(id){document.querySelectorAll('.export-dropdown').forEach(x=>{if(x.id!==id)x.classList.remove('open');});document.getElementById(id)?.classList.toggle('open');}
+    function fecharMenusExport(){document.querySelectorAll('.export-dropdown').forEach(x=>x.classList.remove('open'));}
+    document.addEventListener('click',e=>{if(!e.target.closest('.export-dropdown'))fecharMenusExport();});
+    try { gratData=JSON.parse(localStorage.getItem(GRAT_KEY)||'{}')||{}; } catch(e) { gratData={}; }
+    function gratKey(emp){ return [normalizarTexto(emp.nome),normalizarTexto(emp.unidade),normalizarTexto(emp.tipo)].join('|'); }
+    function gratSalvarStorage(){ try{localStorage.setItem(GRAT_KEY,JSON.stringify(gratData));}catch(e){console.warn('Armazenamento local indisponível',e);} }
+    function gratLiquidoTotal(g,parcela=gratParcelaSelecionada){const adiant=Number(g.adiantamento)||0,inss=Number(g.inss)||0,irrf=Number(g.irrf)||0,outros=Number(g.outros)||0,creditos=Number(g.outrosCreditos)||0,base=Number(g.valorBase)||0;return String(parcela)==='1'?adiant+creditos-inss-irrf-outros:base+creditos-adiant-inss-irrf-outros;}
+    function rotuloParcelaGrat(parcela=gratParcelaSelecionada){return String(parcela)==='1'?'1ª Parcela - Gratificação':'2ª Parcela - Gratificação';}
+    function alterarParcelaGratificacao(parcela,atualizar=true){gratParcelaSelecionada=String(parcela)==='2'?'2':'1';try{localStorage.setItem(GRAT_PARCELA_KEY,gratParcelaSelecionada);}catch(e){}const sel=document.getElementById('gratParcelaTipo');if(sel)sel.value=gratParcelaSelecionada;if(document.getElementById('gratBase'))calcGrat();if(atualizar&&typeof renderTable==='function'&&document.getElementById('tableBody'))renderTable();}
+    function atualizarVisibilidadeColunaGrat(){const th=document.getElementById('gratAmountHead');if(th)th.style.display=gratSheetImported?'table-cell':'none';}
+    function gratV(id){return parseCurrency(document.getElementById(id).value);}
+    function calcGrat(){
+      const base=gratV('gratBase'), meses=Math.max(0,Math.min(12,Number(document.getElementById('gratMeses').value)||0));
+      const total=base*meses/12, adiant=total/2, inss=gratV('gratINSS'), irrf=gratV('gratIRRF');
+      const final=Math.max(0,total+gratV('gratCreditos')-adiant-inss-irrf-gratV('gratOutros'));
+      document.getElementById('gratAdiant').value=formatBRLInput(adiant);
+      const finalInput=document.getElementById('gratFinal'), temRetencao=inss>0||irrf>0;
+      finalInput.value=temRetencao?formatBRLInput(final):'';
+      finalInput.placeholder=temRetencao?'':'Informe INSS e/ou IRRF para exibir';
+      document.getElementById('gratLiquido').value=formatBRLInput(gratLiquidoTotal({valorBase:base,adiantamento:adiant,inss,irrf,outros:gratV('gratOutros'),outrosCreditos:gratV('gratCreditos')},gratParcelaSelecionada));
+    }
+    function abrirGratificacao(i){
+      const emp=payrollData[i]; if(!isGratEligible(emp))return;
+      gratEmpIndex=i; const g=gratData[gratKey(emp)]||{};
+      document.getElementById('gratIdentificacao').textContent=emp.nome+' — '+emp.unidade+' — '+emp.tipo;
+      alterarParcelaGratificacao(gratParcelaSelecionada,false);
+      document.getElementById('gratCompetencia').value=/^\d{4}-\d{2}$/.test(g.competencia||'')?g.competencia:((()=>{const m=String(g.competencia||'').match(/([a-zç]+)\s+(\d{4})/i),idx=m?MONTH_NAMES_PT.indexOf(m[1].toLowerCase()):-1;return m&&idx>=0?`${m[2]}-${String(idx+1).padStart(2,'0')}`:(new Date()).toISOString().slice(0,7);})());
+      document.getElementById('gratBase').value=formatBRLInput(g.valorBase ?? emp.salario ?? 0);
+      document.getElementById('gratMeses').value=g.meses ?? 12;
+      ['gratINSS','gratIRRF','gratOutros','gratCreditos'].forEach((id,n)=>document.getElementById(id).value=formatBRLInput([g.inss,g.irrf,g.outros,g.outrosCreditos][n]||0));
+      document.getElementById('gratObs').value=g.observacoes||'';
+      calcGrat(); document.getElementById('gratOverlay').classList.add('active');
+    }
+    function fecharGratificacao(){document.getElementById('gratOverlay').classList.remove('active');gratEmpIndex=-1;}
+    function lerGrat(){
+      const emp=payrollData[gratEmpIndex]; if(!emp)return null;
+      const base=gratV('gratBase'), meses=Math.max(0,Math.min(12,Number(document.getElementById('gratMeses').value)||0)), total=base*meses/12;
+      const inss=gratV('gratINSS'),irrf=gratV('gratIRRF'),outros=gratV('gratOutros'),outrosCreditos=gratV('gratCreditos'),temRetencao=inss>0||irrf>0;
+      const adiantamento=total/2;
+      return {nome:emp.nome,unidade:emp.unidade,tipo:emp.tipo,valorBase:base,meses,adiantamento,inss,irrf,outros,outrosCreditos,liquidoPagar:gratLiquidoTotal({valorBase:base,adiantamento,inss,irrf,outros,outrosCreditos},gratParcelaSelecionada),competencia:gratCompetenciaAtual(),parcelaFinal:temRetencao?Math.max(0,total+outrosCreditos-adiantamento-inss-irrf-outros):null,observacoes:document.getElementById('gratObs').value.trim()};
+    }
+    function salvarGratificacao(){
+      const g=lerGrat();if(!g)return;
+      gratData[gratKey(payrollData[gratEmpIndex])]=g;gratSalvarStorage();atualizarBotaoExportGrat();renderTable();
+      let aviso=document.getElementById('gratSaveNotice');
+      if(!aviso){aviso=document.createElement('div');aviso.id='gratSaveNotice';aviso.setAttribute('role','status');aviso.setAttribute('aria-live','polite');aviso.style.cssText='position:fixed;right:24px;top:24px;z-index:3000;max-width:420px;padding:16px 20px;border-radius:10px;background:#ecfdf5;border:1px solid #86efac;border-left:5px solid #059669;color:#065f46;box-shadow:0 12px 32px rgba(15,23,42,.2);font:600 14px/1.5 Segoe UI,Arial,sans-serif;';document.body.appendChild(aviso);}
+      aviso.innerHTML='<strong>✓ Gratificação salva com sucesso</strong><br>'+escapeHtml(g.nome)+' — '+escapeHtml(g.unidade)+'<br><span style="font-weight:400">Registro atualizado e pronto para exportação na planilha de Gratificação Natalina.</span>';
+      aviso.style.display='block';clearTimeout(window.gratSaveNoticeTimer);window.gratSaveNoticeTimer=setTimeout(()=>{aviso.style.transition='opacity .35s';aviso.style.opacity='0';setTimeout(()=>{aviso.style.display='none';aviso.style.opacity='1';},380);},4200);
+    }
+    function atualizarBotaoExportGrat(){const show=Object.keys(gratData).length>0;['menuExportGrat','menuPdfGrat','menuProfGrat'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=show?'block':'none';});}
+    function montarPdfGrat(g){
+      const {jsPDF}=window.jspdf,doc=new jsPDF('portrait','mm','a4');
+      const isMeiPj=['mei/pj','pj-mei','pj/mei'].includes(normalizarTexto(g.tipo)),titulo=isMeiPj?'COMPENSAÇÃO EXTRAORDINÁRIA POR SERVIÇOS ADICIONAIS':'GRATIFICAÇÃO NATALINA';
+      doc.setFillColor(15,76,129);doc.rect(0,0,210,26,'F');doc.setTextColor(255);doc.setFontSize(isMeiPj?12:16);doc.text(titulo,14,13);doc.setFontSize(10);doc.text(`${formatarMesGrat(g.competencia)||currentPeriodLabel||'Demonstrativo anual'} | ${rotuloParcelaGrat()}`,14,20);
+      doc.setTextColor(30);doc.setFontSize(13);doc.text(g.nome,14,38);doc.setFontSize(10);doc.text(`${g.unidade} | Vínculo: ${g.tipo} | ${g.meses} mês(es)`,14,45);
+      const linhas=[['Valor-base',formatBRL(g.valorBase)],['Adiantamento Gratificação',formatBRL(g.adiantamento)],['INSS',formatBRL(g.inss)],['IRRF',formatBRL(g.irrf)],['Outros descontos',formatBRL(g.outros)],['Outros créditos',formatBRL(g.outrosCreditos||0)],['Valor líquido a ser pago',formatBRL(gratLiquidoTotal(g))]];
+      if(Number(g.inss)>0||Number(g.irrf)>0)linhas.push(['Última parcela da gratificação',formatBRL(g.parcelaFinal||0)]);
+      doc.autoTable({startY:54,head:[['Descrição','Valor']],body:linhas,theme:'grid',headStyles:{fillColor:[15,76,129]},styles:{fontSize:11,cellPadding:4},columnStyles:{1:{halign:'right'}}});
+      desenharObservacoesPDF(doc,doc.lastAutoTable.finalY+10,g.observacoes);
+      return {doc,filename:`${isMeiPj?'Compensacao_Extraordinaria':'Gratificacao_Natalina'}_${g.nome.replace(/\s+/g,'_')}.pdf`};
+    }
+    function visualizarPdfGrat(){const g=lerGrat();if(g){gratData[gratKey(payrollData[gratEmpIndex])]=g;gratSalvarStorage();atualizarBotaoExportGrat();renderTable();const x=montarPdfGrat(g);showPdfPreview(x.doc,x.filename);}}
+    function compartilharGratWhats(){if(gratEmpIndex>=0){const g=lerGrat();if(g){gratData[gratKey(payrollData[gratEmpIndex])]=g;gratSalvarStorage();atualizarBotaoExportGrat();renderTable();abrirWhatsModal(gratEmpIndex,'grat');}}}
+    ['gratBase','gratINSS','gratIRRF','gratOutros','gratCreditos'].forEach(id=>{const el=document.getElementById(id);bindCurrencyInput(el);el.addEventListener('input',calcGrat);});
+    document.getElementById('gratMeses').addEventListener('input',calcGrat);
+    document.getElementById('gratParcelaTipo').value=gratParcelaSelecionada;
+    function exportarPdfGrat(modo='analitico'){
+      const rows=Object.values(gratData);if(!rows.length){alert('Ainda não há gratificações salvas para exportar.');return;}
+      const {jsPDF}=window.jspdf,doc=new jsPDF('landscape','mm','a4'),periodos=[...new Set(rows.map(g=>formatarMesGrat(g.competencia)).filter(Boolean))].join(', '),periodo=periodos||currentPeriodLabel||'Período não informado';
+      const temMei=rows.some(g=>['mei/pj','pj-mei','pj/mei'].includes(normalizarTexto(g.tipo)));
+      const titulo=temMei?'RELATÓRIO DE GRATIFICAÇÃO E COMPENSAÇÃO EXTRAORDINÁRIA':'RELATÓRIO DE GRATIFICAÇÃO NATALINA';
+      doc.setFillColor(15,76,129);doc.rect(0,0,297,28,'F');doc.setTextColor(255);doc.setFontSize(15);doc.text(titulo,14,12);doc.setFontSize(9);doc.text(`${periodo} | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,21);
+      const body=rows.slice().sort((a,b)=>(a.unidade||'').localeCompare(b.unidade||'','pt-BR')||(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+      if(modo==='liquidos'){
+        const grupos=new Map();body.forEach(g=>{const key=g.unidade||'Não informada';if(!grupos.has(key))grupos.set(key,{qtd:0,adiant:0,final:0,creditos:0,liquido:0});const x=grupos.get(key);x.qtd++;x.adiant+=Number(g.adiantamento)||0;x.final+=(Number(g.parcelaFinal)||0);x.creditos+=Number(g.outrosCreditos)||0;x.liquido+=gratLiquidoTotal(g);});
+        const out=[...grupos.entries()].map(([k,v])=>[k,v.qtd,formatBRL(v.adiant),formatBRL(v.creditos),formatBRL(v.final),formatBRL(v.liquido)]);
+        doc.autoTable({startY:35,head:[['Empresa','Qtd.','Adiantamentos','Outros créditos','Parcelas finais*','Valor líquido a pagar']],body:out,theme:'grid',headStyles:{fillColor:[51,65,85]},styles:{fontSize:8.5,cellPadding:3},columnStyles:{1:{halign:'center'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}}});
+        let a=0,c=0,f=0,l=0;body.forEach(g=>{a+=Number(g.adiantamento)||0;c+=Number(g.outrosCreditos)||0;f+=Number(g.parcelaFinal)||0;l+=gratLiquidoTotal(g);});doc.autoTable({startY:doc.lastAutoTable.finalY+7,head:[['TOTAL GERAL — TODAS AS EMPRESAS']],body:[['Adiantamentos',formatBRL(a)],['Outros créditos',formatBRL(c)],['Parcelas finais*',formatBRL(f)],['Valor líquido a pagar',formatBRL(l)]],theme:'grid',headStyles:{fillColor:[15,76,129]},styles:{fontSize:10},columnStyles:{1:{halign:'right'}}});
+        doc.setFontSize(8);doc.setTextColor(100);doc.text('* Parcela final exibida somente para registros com INSS e/ou IRRF informado.',14,doc.lastAutoTable.finalY+8);
+      } else {
+        const data=body.map(g=>[g.nome,g.unidade,g.tipo,g.meses,formatBRL(g.valorBase),formatBRL(g.adiantamento),formatBRL(g.inss),formatBRL(g.irrf),formatBRL(g.outros||0),formatBRL(g.outrosCreditos||0),(Number(g.inss)>0||Number(g.irrf)>0)?formatBRL(g.parcelaFinal||0):'—',formatBRL(gratLiquidoTotal(g))]);
+        doc.autoTable({startY:35,head:[['Colaborador','Empresa','Vínculo','Meses','Valor-base','Adiantamento','INSS','IRRF','Outros descontos','Outros créditos','Última parcela*','Valor líquido a pagar']],body:data,theme:'grid',headStyles:{fillColor:[51,65,85]},styles:{fontSize:7,cellPadding:1.8},columnStyles:{3:{halign:'center'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'},8:{halign:'right'},9:{halign:'right'},10:{halign:'right'},11:{halign:'right'}}});
+        let sumY=doc.lastAutoTable.finalY+7;const byCompany=new Map();body.forEach(g=>{const k=g.unidade||'Não informada';const a=byCompany.get(k)||{qtd:0,liquido:0};a.qtd++;a.liquido+=gratLiquidoTotal(g);byCompany.set(k,a);});
+        doc.autoTable({startY:sumY,head:[['RESUMO POR EMPRESA','Colaboradores','Valor líquido total a pagar']],body:[...byCompany.entries()].map(([empresa,x])=>[empresa,x.qtd,formatBRL(x.liquido)]),theme:'grid',headStyles:{fillColor:[15,76,129]},styles:{fontSize:9,cellPadding:3},columnStyles:{1:{halign:'center'},2:{halign:'right'}}});
+        doc.setFontSize(8);doc.setTextColor(100);doc.text('* Última parcela exibida somente quando há INSS e/ou IRRF informado.',14,doc.lastAutoTable.finalY+7);
+      }
+      const filename=`${modo==='liquidos'?'Liquidos_a_Pagar':'Relatorio_Analitico'}_Gratificacao_${new Date().toISOString().slice(0,10)}.pdf`;showPdfPreview(doc,filename);
+    }
+    function abrirExportPlanilhaGrat(){if(!Object.keys(gratData).length){alert('Ainda não há gratificações salvas para exportar.');return;}document.getElementById('gratParcelaSelect').value=gratParcelaSelecionada;document.getElementById('gratParcelOverlay').classList.add('active');}
+    function fecharExportParcelaGrat(){document.getElementById('gratParcelOverlay').classList.remove('active');}
+    function confirmarExportParcelaGrat(){const n=Number(document.getElementById('gratParcelaSelect').value)||1;alterarParcelaGratificacao(n);fecharExportParcelaGrat();exportarPlanilhaGrat(n);}
+    async function exportarPlanilhaGrat(parcela=Number(gratParcelaSelecionada)){
+      alterarParcelaGratificacao(parcela);const parcelaLabel=rotuloParcelaGrat(parcela);
+      const rows=Object.values(gratData);if(!rows.length){atualizarBotaoExportGrat();return;}
+      const competenciasGrat=[...new Set(rows.map(g=>formatarMesGrat(g.competencia)).filter(Boolean))].join(', ')||currentPeriodLabel||'Não informada';
+      const wb=new ExcelJS.Workbook();wb.creator='Grupo Labmedic — Sistema de Folha';wb.created=new Date();
+      const ws=wb.addWorksheet('Gratificação Natalina',{properties:{defaultColWidth:15}});
+      ws.mergeCells('A1:N1');const title=ws.getCell('A1');title.value=`GRATIFICAÇÃO NATALINA — ${parcelaLabel.toLocaleUpperCase('pt-BR')}`;title.font={size:16,bold:true,color:{argb:'FFFFFFFF'}};title.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F4C81'}};title.alignment={horizontal:'center',vertical:'middle'};ws.getRow(1).height=32;
+      ws.mergeCells('A2:N2');ws.getCell('A2').value=`Parcela: ${parcelaLabel}  |  Competência(s): ${competenciasGrat}  |  Emitido em: ${new Date().toLocaleDateString('pt-BR')}`;ws.getCell('A2').font={italic:true,color:{argb:'FF64748B'}};
+      ws.mergeCells('A3:N3');ws.getCell('A3').value='Valores em reais (R$). Parcela final = total proporcional menos adiantamento, INSS, IRRF e outros descontos.';ws.getCell('A3').font={italic:true,size:9,color:{argb:'FF64748B'}};
+      const header=ws.addRow(['Nome','Unidade','Tipo','Valor-base','Nº de meses','Adiantamento Gratificação','INSS','IRRF','Outros descontos','Outros créditos','Última parcela da gratificação','Valor líquido a pagar','Mês de referência','Observações']);
+      header.height=28;header.eachCell(c=>{c.font={bold:true,color:{argb:'FFFFFFFF'},size:10};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF334155'}};c.alignment={horizontal:'center',vertical:'middle',wrapText:true};c.border={top:{style:'thin',color:{argb:'FFCBD5E1'}},bottom:{style:'thin',color:{argb:'FFCBD5E1'}},left:{style:'thin',color:{argb:'FFCBD5E1'}},right:{style:'thin',color:{argb:'FFCBD5E1'}}};});
+      const dataStart=5, moneyCols=[4,6,7,8,9,10,11,12];
+      rows.sort((a,b)=>(a.unidade||'').localeCompare(b.unidade||'','pt-BR')||(a.nome||'').localeCompare(b.nome||'','pt-BR')).forEach((g,i)=>{
+        const row=ws.addRow([g.nome,g.unidade,g.tipo,g.valorBase,g.meses,g.adiantamento,g.inss,g.irrf,g.outros,g.outrosCreditos||0,(Number(g.inss)>0||Number(g.irrf)>0)?g.parcelaFinal:null,gratLiquidoTotal(g,parcela),formatarMesGrat(g.competencia),g.observacoes||'']);
+        row.height=23;row.eachCell(c=>{c.border={bottom:{style:'thin',color:{argb:'FFE2E8F0'}}};if(i%2===1)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF8FAFC'}};c.alignment={vertical:'middle',wrapText:c.col===14};});
+        moneyCols.forEach(c=>{row.getCell(c).numFmt='"R$" #,##0.00;[Red]("R$" #,##0.00);"R$" 0.00';row.getCell(c).alignment={horizontal:'right',vertical:'middle'};});
+        row.getCell(5).alignment={horizontal:'center',vertical:'middle'};
+      });
+      const lastData=ws.rowCount;const totals=ws.addRow(['TOTAIS GERAIS','','',null,null,null,null,null,null,null,null,null,null,`${rows.length} colaborador(es)`]);
+      totals.font={bold:true,color:{argb:'FF0F4C81'}};totals.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF0F9FF'}};totals.height=25;
+      [4,6,7,8,9,10,11,12].forEach(c=>{const letter=ws.getColumn(c).letter;totals.getCell(c).value={formula:`SUM(${letter}${dataStart}:${letter}${lastData})`};totals.getCell(c).numFmt='"R$" #,##0.00;[Red]("R$" #,##0.00);"R$" 0.00';});
+      totals.eachCell(c=>{c.border={top:{style:'double',color:{argb:'FF0F4C81'}},bottom:{style:'thin',color:{argb:'FF0F4C81'}}};});
+      ws.columns=[{width:34},{width:20},{width:14},{width:17},{width:13},{width:27},{width:16},{width:16},{width:19},{width:18},{width:31},{width:22},{width:21},{width:42}];
+      ws.autoFilter={from:{row:4,column:1},to:{row:Math.max(4,lastData),column:14}};ws.views=[{state:'frozen',ySplit:4,activeCell:'A5'}];ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9};ws.pageSetup.margins={left:0.25,right:0.25,top:0.5,bottom:0.5,header:0.2,footer:0.2};
+      const sum=wb.addWorksheet('Resumo por Empresa');sum.mergeCells('A1:D1');sum.getCell('A1').value='RESUMO DE VALORES LÍQUIDOS A PAGAR POR EMPRESA';sum.getCell('A1').font={size:15,bold:true,color:{argb:'FFFFFFFF'}};sum.getCell('A1').fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0F4C81'}};sum.getCell('A1').alignment={horizontal:'center'};sum.getRow(1).height=29;sum.addRow([`Competência(s): ${competenciasGrat}`]);sum.addRow(['Empresa','Colaboradores','Soma dos adiantamentos','Valor líquido a pagar']);
+      const sumHead=sum.getRow(3);sumHead.font={bold:true,color:{argb:'FFFFFFFF'}};sumHead.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF334155'}};
+      const porEmpresa=new Map();rows.forEach(g=>{const key=g.unidade||'Não informada';if(!porEmpresa.has(key))porEmpresa.set(key,{qtd:0,adiant:0,liquido:0});const v=porEmpresa.get(key);v.qtd++;v.adiant+=Number(g.adiantamento)||0;v.liquido+=gratLiquidoTotal(g,parcela);});
+      [...porEmpresa.entries()].sort((a,b)=>a[0].localeCompare(b[0],'pt-BR')).forEach(([empresa,v])=>sum.addRow([empresa,v.qtd,v.adiant,v.liquido]));sum.addRow(['TOTAL GERAL',rows.length,[...porEmpresa.values()].reduce((a,v)=>a+v.adiant,0),[...porEmpresa.values()].reduce((a,v)=>a+v.liquido,0)]);sum.columns=[{width:34},{width:18},{width:28},{width:27}];sum.getColumn(3).numFmt='"R$" #,##0.00';sum.getColumn(4).numFmt='"R$" #,##0.00';sum.views=[{state:'frozen',ySplit:3}];sum.autoFilter={from:{row:3,column:1},to:{row:Math.max(3,sum.rowCount-1),column:4}};
+      const full=wb.addWorksheet('Dados Completos (Sistema)');full.addRow(['Competência',currentPeriodLabel||'']);full.addRow(['nome','unidade','tipo','valorBase','meses','adiantamento','inss','irrf','outros','outrosCreditos','competencia','parcelaFinal','observacoes']);rows.forEach(g=>full.addRow([g.nome,g.unidade,g.tipo,g.valorBase,g.meses,g.adiantamento,g.inss,g.irrf,g.outros,g.outrosCreditos||0,g.competencia||'',(Number(g.inss)>0||Number(g.irrf)>0)?g.parcelaFinal:null,g.observacoes||'']));full.state='hidden';
+      const buf=await wb.xlsx.writeBuffer();await salvarArquivoComSeletor(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`Grupo Labmedic - Gratificacao Natalina - ${(new Date()).toISOString().slice(0,10)}.xlsx`,{mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',extension:'.xlsx',description:'Planilha Excel'});
+    }
+    function importarPlanilhaGrat(ev){
+      const file=ev.target.files[0];ev.target.value='';if(!file)return;const r=new FileReader();r.onload=e=>{try{
+        const wb=XLSX.read(e.target.result,{type:'array'}),fullName=wb.SheetNames.find(n=>normalizarTexto(n)==='dados completos (sistema)'),sheetName=fullName||wb.SheetNames.find(n=>normalizarTexto(n).includes('gratificacao'))||wb.SheetNames[0],ws=wb.Sheets[sheetName];
+        const titleSheet=wb.Sheets[wb.SheetNames.find(n=>normalizarTexto(n).includes('gratificacao'))||wb.SheetNames[0]],titleText=String(titleSheet?.A1?.v||'');if(/2ª|2a/i.test(titleText))alterarParcelaGratificacao('2',false);else if(/1ª|1a/i.test(titleText))alterarParcelaGratificacao('1',false);
+        const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}),headerIdx=aoa.findIndex(row=>row&&normalizarTexto(row[0])==='nome'),headers=headerIdx>=0?aoa[headerIdx].map(x=>String(x||'')):[],rows=headerIdx>=0?aoa.slice(headerIdx+1).filter(row=>row&&row[0]).map(row=>Object.fromEntries(headers.map((h,i)=>[h,row[i]??'']))):[];let n=0;
+        rows.forEach(row=>{const get=(...names)=>{const k=Object.keys(row).find(x=>names.includes(normalizarTexto(x)));return k?row[k]:'';};const nome=String(get('nome')).trim();if(!nome)return;
+          const g={nome,unidade:String(get('unidade')).trim()||'Não informada',tipo:String(get('tipo')).trim()||'CLT',valorBase:parseNumericCell(get('valor-base','valorbase')),meses:Number(get('nº de meses','no de meses','meses'))||0,adiantamento:parseNumericCell(get('adiantamento gratificacao','adiantamento')),inss:parseNumericCell(get('inss')),irrf:parseNumericCell(get('irrf')),outros:parseNumericCell(get('outros descontos','outros')),outrosCreditos:parseNumericCell(get('outros creditos','outroscreditos')),competencia:String(get('competencia','mês de referência','mes de referencia')||''),parcelaGratificacao:String(get('parcelaGratificacao','parcela selecionada')||gratParcelaSelecionada),parcelaFinal:parseNumericCell(get('ultima parcela da gratificacao','parcela final','parcelafinal')),observacoes:String(get('observacoes')||'')};gratData[[normalizarTexto(nome),normalizarTexto(g.unidade),normalizarTexto(g.tipo)].join('|')]=g;n++;});
+        // Importação independente: disponibiliza no dashboard os colaboradores que ainda não existem na folha carregada, sem sobrescrever registros existentes.
+        Object.values(gratData).forEach(g=>{
+          const found=payrollData.some(emp=>normalizarTexto(emp.nome)===normalizarTexto(g.nome)&&normalizarTexto(emp.unidade)===normalizarTexto(g.unidade)&&normalizarTexto(emp.tipo)===normalizarTexto(g.tipo));
+          if(!found){const emp={nome:g.nome,unidade:g.unidade||'Não informada',tipo:g.tipo||'CLT',extraProventos:[],extraDescontos:[]};CURRENCY_FIELDS.forEach(f=>emp[f]=0);emp.salario=0;payrollData.push(emp);}
+        });
+        gratSheetImported=true;try{localStorage.setItem(GRAT_IMPORTED_KEY,'1');}catch(e){}
+        gratSalvarStorage();sortPayrollData();applyFilters();atualizarVisibilidadeColunaGrat();atualizarBotaoExportGrat();alert(`${n} registro(s) de gratificação importado(s) e disponibilizado(s) no dashboard.`);
+      }catch(err){alert('Não foi possível importar a planilha: '+err.message);}};r.readAsArrayBuffer(file);
+    }
+
     // Inicializar
     (async () => {
         updatePeriodDisplay();
@@ -3599,6 +3821,8 @@
         await carregarCustomEmpresas();
         await carregarCustomCategorias();
         applyFilters();
+        atualizarBotaoExportGrat();
+        atualizarVisibilidadeColunaGrat();
     })();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
