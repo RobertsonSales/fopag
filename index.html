@@ -775,7 +775,7 @@
             </div>
             <div class="export-dropdown" id="profExportDropdown">
                 <button class="btn-prof" type="button" onclick="toggleExportMenu('profExportDropdown')" title="Relatório profissional com resumo por empresa e valores líquidos por colaborador">💼 Líquidos a Pagar (R$) ▾</button>
-                <div class="export-menu"><button type="button" onclick="fecharMenusExport();exportPDFProfissional()">Folha de Pagamento</button><button type="button" id="menuProfGrat" onclick="fecharMenusExport();exportarPdfGrat('liquidos')" style="display:none;">Gratificação Natalina</button></div>
+                <div class="export-menu"><button type="button" onclick="fecharMenusExport();exportPDFProfissional()">Folha de Pagamento</button><button type="button" id="menuProfGrat" onclick="fecharMenusExport();solicitarExportacao(()=>exportarPdfGrat('liquidos'))" style="display:none;">Gratificação Natalina</button></div>
             </div>
             <button class="theme-toggle theme-toggle-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Alternar modo claro/escuro" aria-label="Alternar modo claro/escuro">🌙</button>
         </div>
@@ -3742,18 +3742,34 @@
     document.getElementById('gratMeses').addEventListener('input',calcGrat);
     document.getElementById('gratParcelaTipo').value=gratParcelaSelecionada;
     function exportarPdfGrat(modo='analitico'){
-      const rows=Object.values(gratData);if(!rows.length){alert('Ainda não há gratificações salvas para exportar.');return;}
+      // Respeita os filtros correntes do dashboard, aplicando-os à mesma população
+      // usada pela folha normal e mantendo apenas colaboradores com gratificação salva.
+      const chavesVisiveis=new Set((filteredData||[]).map(emp=>gratKey(emp)));
+      const rows=Object.values(gratData).filter(g=>chavesVisiveis.has(gratKey(g)));
+      if(!rows.length){alert(Object.keys(gratData).length?'Nenhuma gratificação salva corresponde aos filtros selecionados.':'Ainda não há gratificações salvas para exportar.');return;}
       const {jsPDF}=window.jspdf,doc=new jsPDF('landscape','mm','a4'),periodos=[...new Set(rows.map(g=>formatarMesGrat(g.competencia)).filter(Boolean))].join(', '),periodo=periodos||currentPeriodLabel||'Período não informado';
       const temMei=rows.some(g=>['mei/pj','pj-mei','pj/mei'].includes(normalizarTexto(g.tipo)));
       const titulo=temMei?'RELATÓRIO DE GRATIFICAÇÃO E COMPENSAÇÃO EXTRAORDINÁRIA':'RELATÓRIO DE GRATIFICAÇÃO NATALINA';
-      doc.setFillColor(15,76,129);doc.rect(0,0,297,28,'F');doc.setTextColor(255);doc.setFontSize(15);doc.text(titulo,14,12);doc.setFontSize(9);doc.text(`${periodo} | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,21);
+      // Nos PDFs de líquidos, o cabeçalho da primeira página é desenhado abaixo;
+      // não desenhar esta faixa evita sobreposição e corte visual do título.
+      if(modo!=='liquidos'){doc.setFillColor(15,76,129);doc.rect(0,0,297,28,'F');doc.setTextColor(255);doc.setFontSize(15);doc.text(titulo,14,12);doc.setFontSize(9);doc.text(`${periodo} | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,21);}
       const body=rows.slice().sort((a,b)=>(a.unidade||'').localeCompare(b.unidade||'','pt-BR')||(a.nome||'').localeCompare(b.nome||'','pt-BR'));
       if(modo==='liquidos'){
-        const grupos=new Map();body.forEach(g=>{const key=g.unidade||'Não informada';if(!grupos.has(key))grupos.set(key,{qtd:0,adiant:0,final:0,creditos:0,liquido:0});const x=grupos.get(key);x.qtd++;x.adiant+=Number(g.adiantamento)||0;x.final+=(Number(g.parcelaFinal)||0);x.creditos+=Number(g.outrosCreditos)||0;x.liquido+=gratLiquidoTotal(g);});
-        const out=[...grupos.entries()].map(([k,v])=>[k,v.qtd,formatBRL(v.adiant),formatBRL(v.creditos),formatBRL(v.final),formatBRL(v.liquido)]);
-        doc.autoTable({startY:35,head:[['Empresa','Qtd.','Adiantamentos','Outros créditos','Parcelas finais*','Valor líquido a pagar']],body:out,theme:'grid',headStyles:{fillColor:[51,65,85]},styles:{fontSize:8.5,cellPadding:3},columnStyles:{1:{halign:'center'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}}});
-        let a=0,c=0,f=0,l=0;body.forEach(g=>{a+=Number(g.adiantamento)||0;c+=Number(g.outrosCreditos)||0;f+=Number(g.parcelaFinal)||0;l+=gratLiquidoTotal(g);});doc.autoTable({startY:doc.lastAutoTable.finalY+7,head:[['TOTAL GERAL — TODAS AS EMPRESAS']],body:[['Adiantamentos',formatBRL(a)],['Outros créditos',formatBRL(c)],['Parcelas finais*',formatBRL(f)],['Valor líquido a pagar',formatBRL(l)]],theme:'grid',headStyles:{fillColor:[15,76,129]},styles:{fontSize:10},columnStyles:{1:{halign:'right'}}});
-        doc.setFontSize(8);doc.setTextColor(100);doc.text('* Parcela final exibida somente para registros com INSS e/ou IRRF informado.',14,doc.lastAutoTable.finalY+8);
+        // O relatório de líquidos segue a estrutura da folha mensal: resumo por empresa
+        // e, em página própria, relação analítica de cada colaborador.
+        const descontos=g=>(Number(g.inss)||0)+(Number(g.irrf)||0)+(Number(g.outros)||0);
+        const proventos=g=>(String(gratParcelaSelecionada)==='1'?(Number(g.adiantamento)||0):(Number(g.valorBase)||0))+(Number(g.outrosCreditos)||0);
+        const grupos=new Map();body.forEach(g=>{const key=g.unidade||'Não informada';if(!grupos.has(key))grupos.set(key,{qtd:0,prov:0,desc:0,liquido:0});const x=grupos.get(key);x.qtd++;x.prov+=proventos(g);x.desc+=descontos(g);x.liquido+=gratLiquidoTotal(g);});
+        let tp=0,td=0,tl=0;const resumo=[...grupos.entries()].map(([empresa,v])=>{tp+=v.prov;td+=v.desc;tl+=v.liquido;return [empresa,v.qtd,formatBRL(v.prov),formatBRL(v.desc),formatBRL(v.liquido)];});
+        resumo.push(['TOTAL GERAL',body.length,formatBRL(tp),formatBRL(td),formatBRL(tl)]);
+        doc.setFontSize(18);doc.setTextColor(15,76,129);doc.text('Resumo por Empresa — Gratificação Natalina',14,15);
+        doc.setFontSize(10);doc.setTextColor(100);doc.text(`${periodo} | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,22);
+        doc.autoTable({startY:30,head:[['Empresa','Qtd. colaboradores','Total de proventos','Total de descontos','Total a pagar (líquido)']],body:resumo,theme:'grid',headStyles:{fillColor:[15,76,129],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[248,250,252]},styles:{fontSize:9,cellPadding:3},columnStyles:{0:{cellWidth:75},1:{halign:'center'},2:{halign:'right'},3:{halign:'right',textColor:[220,38,38]},4:{halign:'right',textColor:[5,150,105],fontStyle:'bold'}},didParseCell:hook=>{if(hook.section==='body'&&hook.row.index===resumo.length-1){hook.cell.styles.fontStyle='bold';hook.cell.styles.fillColor=[240,249,255];}}});
+        doc.addPage();doc.setFontSize(18);doc.setTextColor(15,76,129);doc.text('Folha Analítica — Gratificação Natalina',14,15);
+        doc.setFontSize(10);doc.setTextColor(100);doc.text(`${periodo} | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,22);
+        const dados=body.map(g=>[g.nome,g.unidade,g.tipo,`${Math.max(0,Math.min(12,Number(g.meses)||0))}/12`,formatBRL(proventos(g)),formatBRL(descontos(g)),formatBRL(gratLiquidoTotal(g))]);
+        doc.autoTable({startY:30,head:[['Colaborador','Empresa','Vínculo','Referência (avos)','Proventos / créditos','Descontos','Líquido a pagar']],body:dados,theme:'grid',rowPageBreak:'avoid',headStyles:{fillColor:[15,76,129],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[248,250,252]},styles:{fontSize:8,cellPadding:2.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:66},1:{cellWidth:41},2:{cellWidth:23},3:{cellWidth:19,halign:'center'},4:{cellWidth:40,halign:'right'},5:{cellWidth:38,halign:'right',textColor:[220,38,38]},6:{cellWidth:42,halign:'right',textColor:[5,150,105],fontStyle:'bold'}}});
+        const paginas=doc.getNumberOfPages();for(let i=1;i<=paginas;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text(`Gratificação Natalina | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,202);doc.text(`Página ${i} de ${paginas}`,283,202,{align:'right'});}
       } else {
         const data=body.map(g=>[g.nome,g.unidade,g.tipo,g.meses,formatBRL(g.valorBase),formatBRL(g.adiantamento),formatBRL(g.inss),formatBRL(g.irrf),formatBRL(g.outros||0),formatBRL(g.outrosCreditos||0),(Number(g.inss)>0||Number(g.irrf)>0)?formatBRL(g.parcelaFinal||0):'—',formatBRL(gratLiquidoTotal(g))]);
         doc.autoTable({startY:35,head:[['Colaborador','Empresa','Vínculo','Meses','Valor-base','Adiantamento','INSS','IRRF','Outros descontos','Outros créditos','Última parcela*','Valor líquido a pagar']],body:data,theme:'grid',headStyles:{fillColor:[51,65,85]},styles:{fontSize:7,cellPadding:1.8},columnStyles:{3:{halign:'center'},4:{halign:'right'},5:{halign:'right'},6:{halign:'right'},7:{halign:'right'},8:{halign:'right'},9:{halign:'right'},10:{halign:'right'},11:{halign:'right'}}});
