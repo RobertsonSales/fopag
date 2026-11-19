@@ -1841,7 +1841,7 @@
                     <td class="text-right" style="display:${showGratColumn?'table-cell':'none'};font-weight:600;color:var(--primary);">${grat?formatBRL(liquidoGrat):'—'}</td>
                     <td class="text-center">
                         <div style="display:flex; gap:6px; justify-content:center; flex-wrap:nowrap;">
-                            ${isGratEligible(emp) ? `<button class="btn-outline" style="padding:5px 9px;font-size:0.8rem;border-radius:6px;color:#9a3412;" onclick="abrirGratificacao(${realIndex})" title="Gratificação Natalina — adiantamento e parcela final">🎄</button>` : ''}
+                            ${isGratEligible(emp) ? `<button class="btn-outline" style="padding:6px 11px;font-size:0.85rem;font-weight:700;border-radius:8px;color:#ffffff;background:linear-gradient(135deg,#dc2626,#15803d);border:2px solid #b91c1c;box-shadow:0 2px 6px rgba(220,38,38,0.35);white-space:nowrap;" onclick="abrirGratificacao(${realIndex})" title="Gratificação Natalina — adiantamento e parcela final">🎄 13º</button>` : ''}
                             <button class="btn-whats" style="padding: 5px 10px; font-size: 0.8rem; border-radius: 6px; cursor: pointer;" onclick="abrirWhatsModal(${realIndex})" title="Enviar documento por WhatsApp (ficha, recibo ou nota de débito)">💬</button>
                             <button class="btn-outline" style="padding: 5px 10px; font-size: 0.8rem;" onclick="openModal(${realIndex})">Editar</button>
                             ${emp.tipo && emp.tipo.includes('MEI/PJ') ? `<button class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="abrirNotaDebito()" title="Emitir Nota de Débito">ND</button>` : ''}
@@ -3753,7 +3753,7 @@
       // Nos PDFs de líquidos, o cabeçalho da primeira página é desenhado abaixo;
       // não desenhar esta faixa evita sobreposição e corte visual do título.
       if(modo!=='liquidos'){doc.setFillColor(15,76,129);doc.rect(0,0,297,28,'F');doc.setTextColor(255);doc.setFontSize(15);doc.text(titulo,14,12);doc.setFontSize(9);doc.text(`${periodo} | ${rotuloParcelaGrat()} | Emitido em ${new Date().toLocaleDateString('pt-BR')}`,14,21);}
-      const body=rows.slice().sort((a,b)=>(a.unidade||'').localeCompare(b.unidade||'','pt-BR')||(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+      const body=rows.slice().sort((a,b)=>(a.unidade||'').localeCompare(b.unidade||'','pt-BR',{sensitivity:'base'})||(a.tipo||'').localeCompare(b.tipo||'','pt-BR',{sensitivity:'base'})||(a.nome||'').localeCompare(b.nome||'','pt-BR'));
       if(modo==='liquidos'){
         // O relatório de líquidos segue a estrutura da folha mensal: resumo por empresa
         // e, em página própria, relação analítica de cada colaborador.
